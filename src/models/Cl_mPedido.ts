@@ -1,0 +1,49 @@
+export default class Cl_mPedido {
+    private _id?: string;
+    private _nomCliente: string = "";
+    private _items: { codigo: string; nombre: string; precio: number; cantidad: number }[] = [];
+    private _metodoPago: string = "";
+    private _detallesPago: string = "";
+    private _estado: string = "Pendiente";
+
+    constructor({ id, nomCliente, items, metodoPago, detallesPago, estado }: 
+                { id?: string; nomCliente: string; items: any[]; metodoPago: string; detallesPago: string; estado?: string }) {
+        this._id = id;
+        this.nomCliente = nomCliente;
+        this.items = items;
+        this.metodoPago = metodoPago;
+        this.detallesPago = detallesPago;
+        if (estado) this.estado = estado;
+    }
+
+    get id(): string | undefined { return this._id; }
+    set nomCliente(value: string) { this._nomCliente = value; }
+    get nomCliente(): string { return this._nomCliente; }
+    set items(value: any[]) { this._items = value ?? []; }
+    get items(): any[] { return this._items; }
+    set metodoPago(value: string) { this._metodoPago = value; }
+    get metodoPago(): string { return this._metodoPago; }
+    set detallesPago(value: string) { this._detallesPago = value; }
+    get detallesPago(): string { return this._detallesPago; }
+    set estado(value: string) { this._estado = value; }
+    get estado(): string { return this._estado; }
+
+    get total(): number {
+        return this.items.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+    }
+
+    get cantidadTotal(): number {
+        return this.items.reduce((sum, item) => sum + item.cantidad, 0);
+    }
+
+    toJSON() {
+        return {
+            NomCliente: this.nomCliente,
+            Items: this.items,
+            Total: this.total,
+            MetodoPago: this.metodoPago,
+            DetallesPago: this.detallesPago,
+            estado: this.estado
+        };
+    }
+}
