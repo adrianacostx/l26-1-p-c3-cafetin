@@ -40,8 +40,8 @@ export default class Cl_vAdmin {
                 <td>${pedido.id || ''}</td>
                 <td>${pedido.nomCliente}</td>
                 <td>${productosHtml}</td>
-                <td>${pedido.cantidadTotal}</td>
-                <td>$${pedido.total.toFixed(2)}</td>
+                <td>${pedido.cantidadTotal()}</td>
+                <td>$${pedido.total().toFixed(2)}</td>
                 <td>${pedido.metodoPago}</td>
                 <td>${pedido.detallesPago || '—'}</td>
                 <td class="${pedido.estado.toLowerCase()}">${pedido.estado}</td>

@@ -34,7 +34,7 @@ export default class Cl_vCliente implements I_vCliente {
         this.cambiarMetodoPago();
     }
 
-    private cambiarMetodoPago() {
+    cambiarMetodoPago() {
         const value = this.selectMetodoPago.value;
         this.divPagoMovil.style.display = value === "Pago Móvil" ? "block" : "none";
         this.divOtro.style.display = value === "Otro" ? "block" : "none";

@@ -46,8 +46,8 @@ export default class Cl_vAdmin implements I_vAdmin {
                 <td>${pedido.id || ''}</td>
                 <td>${pedido.nomCliente}</td>
                 <td>${productosHtml}</td>
-                <td>${pedido.cantidadTotal}</td>
-                <td>$${pedido.total.toFixed(2)}</td>
+                <td>${pedido.cantidadTotal()}</td>
+                <td>$${pedido.total().toFixed(2)}</td>
                 <td>${pedido.metodoPago}</td>
                 <td>${pedido.detallesPago || '—'}</td>
                 <td class="${pedido.estado.toLowerCase()}">${pedido.estado}</td>
@@ -81,7 +81,7 @@ export default class Cl_vAdmin implements I_vAdmin {
         });
     }
 
-    private editarProducto(prod: any) {
+    editarProducto(prod: any) {
         (document.getElementById("prodCodigo") as HTMLInputElement).value = prod.codigo;
         (document.getElementById("prodNombre") as HTMLInputElement).value = prod.nombre;
         (document.getElementById("prodCategoria") as HTMLInputElement).value = prod.categoria;
@@ -89,7 +89,7 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.productoEditandoId = prod.id;
     }
 
-    private guardarProducto() {
+    guardarProducto() {
         const codigo = (document.getElementById("prodCodigo") as HTMLInputElement).value.trim();
         const nombre = (document.getElementById("prodNombre") as HTMLInputElement).value.trim();
         const categoria = (document.getElementById("prodCategoria") as HTMLInputElement).value.trim();

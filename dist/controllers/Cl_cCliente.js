@@ -1,11 +1,13 @@
 import sPedido from "../services/Cl_sPedido.js";
 import sProducto from "../services/Cl_sProducto.js";
+import Cl_mCarrito from "../models/Cl_mCarrito.js";
 export default class Cl_cCliente {
     vista;
     productos = [];
-    carrito = [];
+    carrito;
     constructor(vista) {
         this.vista = vista;
+        this.carrito = new Cl_mCarrito();
         this.vista.onAgregarProducto((codigo, cantidad) => this.agregarAlCarrito(codigo, cantidad));
         this.vista.onEliminarProducto((codigo) => this.eliminarDelCarrito(codigo));
         this.vista.onEnviar(() => this.enviarPedido());
@@ -23,32 +25,18 @@ export default class Cl_cCliente {
     }
     agregarAlCarrito(codigo, cantidad) {
         const producto = this.productos.find(p => p.codigo === codigo);
-        if (!producto || cantidad < 1)
+        if (!producto)
             return;
-        const existente = this.carrito.find(item => item.codigo === codigo);
-        if (existente) {
-            existente.cantidad += cantidad;
-        }
-        else {
-            this.carrito.push({
-                codigo: producto.codigo,
-                nombre: producto.nombre,
-                precio: producto.precio,
-                cantidad: cantidad
-            });
-        }
+        this.carrito.agregar(producto, cantidad);
         this.actualizarVistaCarrito();
     }
     eliminarDelCarrito(codigo) {
-        this.carrito = this.carrito.filter(item => item.codigo !== codigo);
+        this.carrito.eliminar(codigo);
         this.actualizarVistaCarrito();
     }
     actualizarVistaCarrito() {
-        this.vista.mostrarCarrito(this.carrito);
-        this.vista.mostrarTotal(this.calcularTotal());
-    }
-    calcularTotal() {
-        return this.carrito.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+        this.vista.mostrarCarrito(this.carrito.getItems());
+        this.vista.mostrarTotal(this.carrito.calcularTotal());
     }
     async enviarPedido() {
         const nomCliente = this.vista.nomCliente;
@@ -56,7 +44,7 @@ export default class Cl_cCliente {
             this.vista.mostrarAlerta("danger", "Ingrese su nombre");
             return;
         }
-        if (this.carrito.length === 0) {
+        if (this.carrito.estaVacio()) {
             this.vista.mostrarAlerta("warning", "Agregue al menos un producto");
             return;
         }
@@ -84,8 +72,8 @@ export default class Cl_cCliente {
         }
         const pedido = {
             NomCliente: nomCliente,
-            Items: this.carrito,
-            Total: this.calcularTotal(),
+            Items: this.carrito.getItemsParaEnvio(),
+            Total: this.carrito.calcularTotal(),
             MetodoPago: metodoPago,
             DetallesPago: detallesPago,
             estado: "Pendiente"
@@ -93,7 +81,7 @@ export default class Cl_cCliente {
         const resultado = await sPedido.agregar(pedido);
         this.vista.mostrarAlerta(resultado.ok ? "success" : "danger", resultado.mensaje);
         if (resultado.ok) {
-            this.carrito = [];
+            this.carrito.vaciar();
             this.vista.limpiar();
             this.actualizarVistaCarrito();
         }

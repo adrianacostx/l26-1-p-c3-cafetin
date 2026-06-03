@@ -23,11 +23,11 @@ export default class Cl_cAdmin {
         setInterval(() => this.cargarPedidos(), 5000);
     }
 
-    private async cargarDatos() {
+    async cargarDatos() {
         await Promise.all([this.cargarProductos(), this.cargarPedidos()]);
     }
 
-    private async cargarProductos() {
+    async cargarProductos() {
         const res = await sProducto.obtenerTodos();
         if (res.ok) {
             this.productos = res.data;
@@ -35,7 +35,7 @@ export default class Cl_cAdmin {
         }
     }
 
-    private async cargarPedidos() {
+    async cargarPedidos() {
         const res = await sPedido.obtenerTodos();
         if (res.ok) {
             this.pedidos = res.data.map((p: any) => new Cl_mPedido({
@@ -50,7 +50,7 @@ export default class Cl_cAdmin {
         }
     }
 
-    private filtrarPedidos() {
+    filtrarPedidos() {
         return this.pedidos.filter(p => {
             const estadoMatch = this.filtros.estado === "Todos" || p.estado === this.filtros.estado;
             const pagoMatch = this.filtros.metodoPago === "Todos" || p.metodoPago === this.filtros.metodoPago;
@@ -58,18 +58,18 @@ export default class Cl_cAdmin {
         });
     }
 
-    private async procesarPedido(id: string) {
+    async procesarPedido(id: string) {
         const res = await sPedido.actualizarEstado(id, "Procesado");
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.ok ? "Pedido procesado" : res.mensaje);
         if (res.ok) await this.cargarPedidos();
     }
-    private async cancelarPedido(id: string) {
+    async cancelarPedido(id: string) {
         const res = await sPedido.actualizarEstado(id, "Cancelado");
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.ok ? "Pedido cancelado" : res.mensaje);
         if (res.ok) await this.cargarPedidos();
     }
 
-    private async guardarProducto(producto: any) {
+    async guardarProducto(producto: any) {
         let res;
         if (producto.id) {
             res = await sProducto.actualizar(producto.id, producto);
@@ -80,7 +80,7 @@ export default class Cl_cAdmin {
         if (res.ok) await this.cargarProductos();
     }
 
-    private async eliminarProducto(id: string) {
+    async eliminarProducto(id: string) {
         const res = await sProducto.eliminar(id);
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.mensaje);
         if (res.ok) await this.cargarProductos();

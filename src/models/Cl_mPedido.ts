@@ -28,11 +28,11 @@ export default class Cl_mPedido {
     set estado(value: string) { this._estado = value; }
     get estado(): string { return this._estado; }
 
-    get total(): number {
+    total(): number {
         return this.items.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
     }
 
-    get cantidadTotal(): number {
+    cantidadTotal(): number {
         return this.items.reduce((sum, item) => sum + item.cantidad, 0);
     }
 

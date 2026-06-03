@@ -25,10 +25,10 @@ export default class Cl_mPedido {
     get detallesPago() { return this._detallesPago; }
     set estado(value) { this._estado = value; }
     get estado() { return this._estado; }
-    get total() {
+    total() {
         return this.items.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
     }
-    get cantidadTotal() {
+    cantidadTotal() {
         return this.items.reduce((sum, item) => sum + item.cantidad, 0);
     }
     toJSON() {
