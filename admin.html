@@ -22,7 +22,8 @@
         <div class="tab-pane fade show active" id="pedidos">
             <div class="card shadow-sm mb-4">
                 <div class="card-body row g-3">
-                    <div class="col-md-6"><label>Filtrar por estado</label>
+                    <div class="col-md-3">
+                        <label>Filtrar por estado</label>
                         <select id="inFiltroEstado" class="form-select">
                             <option value="Todos">Todos</option>
                             <option value="Pendiente">Pendientes</option>
@@ -30,7 +31,7 @@
                             <option value="Cancelado">Cancelados</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <label>Filtrar por pago</label>
                         <select id="inFiltroMetodoPago" class="form-select">
                             <option value="Todos">Todos</option>
@@ -40,12 +41,32 @@
                             <option value="Otro">Otro</option>
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <label>Filtrar por fecha</label>
+                        <input type="date" id="inFiltroFecha" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label>Filtrar por producto</label>
+                        <select id="inFiltroProducto" class="form-select">
+                            <option value="Todos">Todos</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="card shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light"><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Cantidad</th><th>Total</th><th>Método pago</th><th>Detalle</th><th>Estado</th><th>Acción</th></thead>
+                        <thead class="table-light">
+                            <tr><th>ID</th>
+                                <th>Cliente</th>
+                                <th>Productos</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                                <th>Método pago</th>
+                                <th>Detalle</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acción</th></thead>
                         <tbody id="tablaPedidos"></tbody>
                     </table>
                 </div>
@@ -82,7 +103,15 @@
             <div class="card shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
-                        <thead class="table-light"><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th></thead>
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
                         <tbody id="tablaProductos"></tbody>
                     </table>
                 </div>
@@ -90,7 +119,17 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="adminAlertModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Aviso</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="adminAlertModalBody"></div></div></div></div>
+<div class="modal fade" id="adminAlertModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aviso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="adminAlertModalBody"></div>
+        </div>
+    </div>
+</div>
 <script type="module">
     import Cl_cAdmin from "./dist/controllers/Cl_cAdmin.js";
     import Cl_vAdmin from "./dist/views/Cl_vAdmin.js";

@@ -8,6 +8,13 @@ export default class Cl_sProducto {
         return { ok: result.ok, data: result.tabla };
     }
 
+    static async obtenerNombresUnicos(): Promise<{ ok: boolean; nombres: string[] }> {
+        const result = await this.obtenerTodos();
+        if (!result.ok) return { ok: false, nombres: [] };
+        const nombresUnicos = [...new Set(result.data.map((p: any) => p.nombre))].sort();
+        return { ok: true, nombres: nombresUnicos };
+    }
+
     static async agregar(producto: any): Promise<{ ok: boolean; mensaje: string }> {
         const registro = { ...producto, tabla: this.TABLA };
         return await Cl_sProductoApi.agregar(registro);

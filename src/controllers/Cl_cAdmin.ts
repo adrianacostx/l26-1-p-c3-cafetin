@@ -7,7 +7,7 @@ export default class Cl_cAdmin {
     private vista: I_vAdmin;
     private pedidos: Cl_mPedido[] = [];
     private productos: any[] = [];
-    private filtros = { estado: "Todos", metodoPago: "Todos" };
+    private filtros = { estado: "Todos", metodoPago: "Todos", fecha: "", producto: "Todos" };
 
     constructor(vista: I_vAdmin) {
         this.vista = vista;
@@ -32,6 +32,11 @@ export default class Cl_cAdmin {
         if (res.ok) {
             this.productos = res.data;
             this.vista.mostrarProductos(this.productos);
+
+            const resNombres = await sProducto.obtenerNombresUnicos();
+            if (resNombres.ok) {
+                this.vista.poblarFiltroProductos(resNombres.nombres);
+            }
         }
     }
 
@@ -44,6 +49,7 @@ export default class Cl_cAdmin {
                 items: p.Items,
                 metodoPago: p.MetodoPago,
                 detallesPago: p.DetallesPago,
+                fecha: p.Fecha || (p.createdAt ? p.createdAt.split("T")[0] : ""),
                 estado: p.estado
             }));
             this.vista.mostrarPedidos(this.filtrarPedidos());
@@ -54,7 +60,9 @@ export default class Cl_cAdmin {
         return this.pedidos.filter(p => {
             const estadoMatch = this.filtros.estado === "Todos" || p.estado === this.filtros.estado;
             const pagoMatch = this.filtros.metodoPago === "Todos" || p.metodoPago === this.filtros.metodoPago;
-            return estadoMatch && pagoMatch;
+            const fechaMatch = !this.filtros.fecha || p.fecha === this.filtros.fecha;
+            const productoMatch = this.filtros.producto === "Todos" || p.items.some((item: any) => item.nombre === this.filtros.producto);
+            return estadoMatch && pagoMatch && fechaMatch && productoMatch;
         });
     }
 

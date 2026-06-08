@@ -82,6 +82,7 @@ export default class Cl_cCliente {
             Total: this.carrito.calcularTotal(),
             MetodoPago: metodoPago,
             DetallesPago: detallesPago,
+            Fecha: new Date().toISOString().split("T")[0],
             estado: "Pendiente"
         };
 

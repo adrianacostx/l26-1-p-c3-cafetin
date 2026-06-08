@@ -4,6 +4,8 @@ export default class Cl_vAdmin implements I_vAdmin {
     private tablaPedidos: HTMLTableSectionElement;
     private filtroEstado: HTMLSelectElement;
     private filtroMetodoPago: HTMLSelectElement;
+    private filtroFecha: HTMLInputElement;
+    private filtroProducto: HTMLSelectElement;
     private tablaProductos: HTMLTableSectionElement;
     private formProducto: HTMLFormElement;
     private btnGuardarProducto: HTMLButtonElement;
@@ -21,14 +23,18 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.tablaPedidos = document.getElementById("tablaPedidos") as HTMLTableSectionElement;
         this.filtroEstado = document.getElementById("inFiltroEstado") as HTMLSelectElement;
         this.filtroMetodoPago = document.getElementById("inFiltroMetodoPago") as HTMLSelectElement;
+        this.filtroFecha = document.getElementById("inFiltroFecha") as HTMLInputElement;
+        this.filtroProducto = document.getElementById("inFiltroProducto") as HTMLSelectElement;
         this.tablaProductos = document.getElementById("tablaProductos") as HTMLTableSectionElement;
         this.formProducto = document.getElementById("formProducto") as HTMLFormElement;
         this.btnGuardarProducto = document.getElementById("btnGuardarProducto") as HTMLButtonElement;
         this.modalEl = document.getElementById("adminAlertModal");
         this.modalBody = document.getElementById("adminAlertModalBody");
 
-        this.filtroEstado.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value });
-        this.filtroMetodoPago.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value });
+        this.filtroEstado.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
+        this.filtroMetodoPago.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
+        this.filtroFecha.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
+        this.filtroProducto.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
         this.formProducto.onsubmit = (e) => { e.preventDefault(); this.guardarProducto(); };
         this.btnGuardarProducto.onclick = () => this.guardarProducto();
 
@@ -50,6 +56,7 @@ export default class Cl_vAdmin implements I_vAdmin {
                 <td>$${pedido.total().toFixed(2)}</td>
                 <td>${pedido.metodoPago}</td>
                 <td>${pedido.detallesPago || '—'}</td>
+                <td>${pedido.fecha || '—'}</td>
                 <td class="${pedido.estado.toLowerCase()}">${pedido.estado}</td>
                 <td><button class="btn btn-sm btn-success btn-procesar" data-id="${pedido.id}" ${pedido.estado !== 'Pendiente' ? 'disabled' : ''}>Procesar</button><button class="btn btn-sm btn-danger btn-cancelar" data-id="${pedido.id}" ${pedido.estado !== 'Pendiente' ? 'disabled' : ''}>Cancelar</button></td>
             `;
@@ -101,6 +108,20 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.guardarProductoCallback?.({ id: this.productoEditandoId, codigo, nombre, categoria, precio });
         this.formProducto.reset();
         this.productoEditandoId = null;
+    }
+
+    poblarFiltroProductos(nombres: string[]): void {
+        // Limpiar opciones excepto la primera (Todos)
+        while (this.filtroProducto.options.length > 1) {
+            this.filtroProducto.remove(1);
+        }
+        // Agregar nuevas opciones dinámicamente
+        nombres.forEach(nombre => {
+            const option = document.createElement("option");
+            option.value = nombre;
+            option.textContent = nombre;
+            this.filtroProducto.appendChild(option);
+        });
     }
 
     onProcesarPedido(callback: (id: string) => void): void { this.procesarCallback = callback; }

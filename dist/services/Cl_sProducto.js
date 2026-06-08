@@ -5,6 +5,13 @@ export default class Cl_sProducto {
         const result = await Cl_sProductoApi.getTabla({ tabla: this.TABLA });
         return { ok: result.ok, data: result.tabla };
     }
+    static async obtenerNombresUnicos() {
+        const result = await this.obtenerTodos();
+        if (!result.ok)
+            return { ok: false, nombres: [] };
+        const nombresUnicos = [...new Set(result.data.map((p) => p.nombre))].sort();
+        return { ok: true, nombres: nombresUnicos };
+    }
     static async agregar(producto) {
         const registro = { ...producto, tabla: this.TABLA };
         return await Cl_sProductoApi.agregar(registro);

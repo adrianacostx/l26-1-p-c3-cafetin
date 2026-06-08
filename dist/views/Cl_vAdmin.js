@@ -2,6 +2,8 @@ export default class Cl_vAdmin {
     tablaPedidos;
     filtroEstado;
     filtroMetodoPago;
+    filtroFecha;
+    filtroProducto;
     tablaProductos;
     formProducto;
     btnGuardarProducto;
@@ -18,13 +20,17 @@ export default class Cl_vAdmin {
         this.tablaPedidos = document.getElementById("tablaPedidos");
         this.filtroEstado = document.getElementById("inFiltroEstado");
         this.filtroMetodoPago = document.getElementById("inFiltroMetodoPago");
+        this.filtroFecha = document.getElementById("inFiltroFecha");
+        this.filtroProducto = document.getElementById("inFiltroProducto");
         this.tablaProductos = document.getElementById("tablaProductos");
         this.formProducto = document.getElementById("formProducto");
         this.btnGuardarProducto = document.getElementById("btnGuardarProducto");
         this.modalEl = document.getElementById("adminAlertModal");
         this.modalBody = document.getElementById("adminAlertModalBody");
-        this.filtroEstado.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value });
-        this.filtroMetodoPago.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value });
+        this.filtroEstado.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
+        this.filtroMetodoPago.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
+        this.filtroFecha.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
+        this.filtroProducto.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
         this.formProducto.onsubmit = (e) => { e.preventDefault(); this.guardarProducto(); };
         this.btnGuardarProducto.onclick = () => this.guardarProducto();
         if (this.modalEl && window.bootstrap) {
@@ -44,6 +50,7 @@ export default class Cl_vAdmin {
                 <td>$${pedido.total().toFixed(2)}</td>
                 <td>${pedido.metodoPago}</td>
                 <td>${pedido.detallesPago || '—'}</td>
+                <td>${pedido.fecha || '—'}</td>
                 <td class="${pedido.estado.toLowerCase()}">${pedido.estado}</td>
                 <td><button class="btn btn-sm btn-success btn-procesar" data-id="${pedido.id}" ${pedido.estado !== 'Pendiente' ? 'disabled' : ''}>Procesar</button><button class="btn btn-sm btn-danger btn-cancelar" data-id="${pedido.id}" ${pedido.estado !== 'Pendiente' ? 'disabled' : ''}>Cancelar</button></td>
             `;
@@ -92,6 +99,19 @@ export default class Cl_vAdmin {
         this.guardarProductoCallback?.({ id: this.productoEditandoId, codigo, nombre, categoria, precio });
         this.formProducto.reset();
         this.productoEditandoId = null;
+    }
+    poblarFiltroProductos(nombres) {
+        // Limpiar opciones excepto la primera (Todos)
+        while (this.filtroProducto.options.length > 1) {
+            this.filtroProducto.remove(1);
+        }
+        // Agregar nuevas opciones dinámicamente
+        nombres.forEach(nombre => {
+            const option = document.createElement("option");
+            option.value = nombre;
+            option.textContent = nombre;
+            this.filtroProducto.appendChild(option);
+        });
     }
     onProcesarPedido(callback) { this.procesarCallback = callback; }
     onCancelarPedido(callback) { this.cancelarCallback = callback; }
