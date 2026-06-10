@@ -2,12 +2,14 @@ import I_vAdmin from "../interfaces/I_vAdmin.js";
 import sPedido from "../services/Cl_sPedido.js";
 import sProducto from "../services/Cl_sProducto.js";
 import Cl_mPedido from "../models/Cl_mPedido.js";
+import Cl_mProducto from "../models/Cl_mProducto.js";
 
 export default class Cl_cAdmin {
     private vista: I_vAdmin;
     private pedidos: Cl_mPedido[] = [];
     private productos: any[] = [];
     private filtros = { estado: "Todos", metodoPago: "Todos", fecha: "", producto: "Todos" };
+    private filtroNombreProducto = "";
 
     constructor(vista: I_vAdmin) {
         this.vista = vista;
@@ -15,7 +17,11 @@ export default class Cl_cAdmin {
         this.vista.onCancelarPedido((id) => this.cancelarPedido(id));
         this.vista.onFiltrarPedidos((filtros) => {
             this.filtros = filtros;
-            this.vista.mostrarPedidos(this.filtrarPedidos());
+            this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
+        });
+        this.vista.onBuscarProducto((texto) => {
+            this.filtroNombreProducto = texto.trim().toLowerCase();
+            this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
         });
         this.vista.onGuardarProducto(async (producto) => await this.guardarProducto(producto));
         this.vista.onEliminarProducto(async (id) => await this.eliminarProducto(id));
@@ -31,8 +37,7 @@ export default class Cl_cAdmin {
         const res = await sProducto.obtenerTodos();
         if (res.ok) {
             this.productos = res.data;
-            this.vista.mostrarProductos(this.productos);
-
+            this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
             const resNombres = await sProducto.obtenerNombresUnicos();
             if (resNombres.ok) {
                 this.vista.poblarFiltroProductos(resNombres.nombres);
@@ -52,18 +57,21 @@ export default class Cl_cAdmin {
                 fecha: p.Fecha || (p.createdAt ? p.createdAt.split("T")[0] : ""),
                 estado: p.estado
             }));
-            this.vista.mostrarPedidos(this.filtrarPedidos());
+            this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
+            this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
         }
     }
 
-    filtrarPedidos() {
-        return this.pedidos.filter(p => {
-            const estadoMatch = this.filtros.estado === "Todos" || p.estado === this.filtros.estado;
-            const pagoMatch = this.filtros.metodoPago === "Todos" || p.metodoPago === this.filtros.metodoPago;
-            const fechaMatch = !this.filtros.fecha || p.fecha === this.filtros.fecha;
-            const productoMatch = this.filtros.producto === "Todos" || p.items.some((item: any) => item.nombre === this.filtros.producto);
-            return estadoMatch && pagoMatch && fechaMatch && productoMatch;
-        });
+    obtenerEstadisticasProductos() {
+        const productosFiltrados = this.filtroNombreProducto
+            ? this.productos.filter(producto => producto.nombre.toLowerCase().includes(this.filtroNombreProducto))
+            : this.productos;
+
+        return Cl_mProducto.calcularEstadisticas(productosFiltrados, this.pedidos);
+    }
+
+    obtenerPedidosFiltrados() {
+        return this.pedidos.filter(pedido => pedido.coincideConFiltros(this.filtros));
     }
 
     async procesarPedido(id: string) {
@@ -71,6 +79,7 @@ export default class Cl_cAdmin {
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.ok ? "Pedido procesado" : res.mensaje);
         if (res.ok) await this.cargarPedidos();
     }
+
     async cancelarPedido(id: string) {
         const res = await sPedido.actualizarEstado(id, "Cancelado");
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.ok ? "Pedido cancelado" : res.mensaje);

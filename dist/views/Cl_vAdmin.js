@@ -7,10 +7,12 @@ export default class Cl_vAdmin {
     tablaProductos;
     formProducto;
     btnGuardarProducto;
+    inputBuscarProducto;
     productoEditandoId = null;
     procesarCallback;
     cancelarCallback;
     filtrarCallback;
+    buscarProductoCallback;
     guardarProductoCallback;
     eliminarProductoCallback;
     modalEl;
@@ -25,12 +27,14 @@ export default class Cl_vAdmin {
         this.tablaProductos = document.getElementById("tablaProductos");
         this.formProducto = document.getElementById("formProducto");
         this.btnGuardarProducto = document.getElementById("btnGuardarProducto");
+        this.inputBuscarProducto = document.getElementById("inBuscarProducto");
         this.modalEl = document.getElementById("adminAlertModal");
         this.modalBody = document.getElementById("adminAlertModalBody");
         this.filtroEstado.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
         this.filtroMetodoPago.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, producto: this.filtroProducto.value });
         this.filtroFecha.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
         this.filtroProducto.onchange = () => this.filtrarCallback?.({ estado: this.filtroEstado.value, metodoPago: this.filtroMetodoPago.value, fecha: this.filtroFecha.value, producto: this.filtroProducto.value });
+        this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
         this.formProducto.onsubmit = (e) => { e.preventDefault(); this.guardarProducto(); };
         this.btnGuardarProducto.onclick = () => this.guardarProducto();
         if (this.modalEl && window.bootstrap) {
@@ -63,12 +67,16 @@ export default class Cl_vAdmin {
     mostrarProductos(productos) {
         this.tablaProductos.innerHTML = "";
         productos.forEach(prod => {
+            const cantidadSolicitada = Number(prod.cantidadSolicitada || 0);
+            const porcentajeSolicitado = Number(prod.porcentajeSolicitado || 0);
             const fila = this.tablaProductos.insertRow();
             fila.innerHTML = `
                 <td>${prod.codigo}</td>
                 <td>${prod.nombre}</td>
                 <td>${prod.categoria}</td>
-                <td>$${prod.precio.toFixed(2)}</td>
+                <td>$${Number(prod.precio || 0).toFixed(2)}</td>
+                <td>${cantidadSolicitada}</td>
+                <td>${porcentajeSolicitado.toFixed(1)}%</td>
                 <td>
                     <button class="btn btn-sm btn-warning btn-editar" data-id="${prod.id}">Editar</button>
                     <button class="btn btn-sm btn-danger btn-eliminar" data-id="${prod.id}">Eliminar</button>
@@ -101,11 +109,9 @@ export default class Cl_vAdmin {
         this.productoEditandoId = null;
     }
     poblarFiltroProductos(nombres) {
-        // Limpiar opciones excepto la primera (Todos)
         while (this.filtroProducto.options.length > 1) {
             this.filtroProducto.remove(1);
         }
-        // Agregar nuevas opciones dinámicamente
         nombres.forEach(nombre => {
             const option = document.createElement("option");
             option.value = nombre;
@@ -116,6 +122,7 @@ export default class Cl_vAdmin {
     onProcesarPedido(callback) { this.procesarCallback = callback; }
     onCancelarPedido(callback) { this.cancelarCallback = callback; }
     onFiltrarPedidos(callback) { this.filtrarCallback = callback; }
+    onBuscarProducto(callback) { this.buscarProductoCallback = callback; }
     onGuardarProducto(callback) { this.guardarProductoCallback = callback; }
     onEliminarProducto(callback) { this.eliminarProductoCallback = callback; }
     mostrarModal(tipo, mensaje) {

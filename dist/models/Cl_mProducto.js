@@ -20,6 +20,16 @@ export default class Cl_mProducto {
     get categoria() { return this._categoria; }
     set precio(value) { this._precio = value; }
     get precio() { return this._precio; }
+    static calcularEstadisticas(productos, pedidos) {
+        const totalUnidadesSolicitadas = pedidos.reduce((total, pedido) => total + pedido.cantidadTotal(), 0);
+        return productos.map(producto => {
+            const cantidadSolicitada = pedidos.reduce((total, pedido) => total + pedido.calcularUnidadesSolicitadasDeProducto(producto.codigo, producto.nombre), 0);
+            const porcentajeSolicitado = totalUnidadesSolicitadas > 0
+                ? (cantidadSolicitada / totalUnidadesSolicitadas) * 100
+                : 0;
+            return { ...producto, cantidadSolicitada, porcentajeSolicitado };
+        });
+    }
     toJSON() {
         return {
             tabla: "producto",

@@ -7,14 +7,13 @@ export default class Cl_mPedido {
     private _fecha: string = "";
     private _estado: string = "Pendiente";
 
-    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado}: 
+    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado }: 
                 { id?: string; nomCliente: string; items: any[]; metodoPago: string; detallesPago: string; estado?: string; fecha?: string }) {
         this._id = id;
         this.nomCliente = nomCliente;
         this.items = items;
         this.metodoPago = metodoPago;
         this.detallesPago = detallesPago;
-        // Si viene fecha de la BD, usarla; si no, usar hoy
         this._fecha = fecha && fecha.trim() ? fecha : new Date().toISOString().split("T")[0];
         if (estado) this.estado = estado;
     }
@@ -39,6 +38,20 @@ export default class Cl_mPedido {
 
     cantidadTotal(): number {
         return this.items.reduce((sum, item) => sum + item.cantidad, 0);
+    }
+
+    coincideConFiltros(filtros: { estado: string; metodoPago: string; fecha: string; producto: string }): boolean {
+        const estadoMatch = filtros.estado === "Todos" || this.estado === filtros.estado;
+        const pagoMatch = filtros.metodoPago === "Todos" || this.metodoPago === filtros.metodoPago;
+        const fechaMatch = !filtros.fecha || this.fecha === filtros.fecha;
+        const productoMatch = filtros.producto === "Todos" || this.items.some(item => item.nombre === filtros.producto);
+        return estadoMatch && pagoMatch && fechaMatch && productoMatch;
+    }
+
+    calcularUnidadesSolicitadasDeProducto(codigo: string, nombre: string): number {
+        return this.items
+            .filter(item => item.codigo === codigo || item.nombre === nombre)
+            .reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
     }
 
     toJSON() {

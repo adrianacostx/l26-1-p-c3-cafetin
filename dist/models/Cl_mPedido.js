@@ -12,7 +12,6 @@ export default class Cl_mPedido {
         this.items = items;
         this.metodoPago = metodoPago;
         this.detallesPago = detallesPago;
-        // Si viene fecha de la BD, usarla; si no, usar hoy
         this._fecha = fecha && fecha.trim() ? fecha : new Date().toISOString().split("T")[0];
         if (estado)
             this.estado = estado;
@@ -35,6 +34,18 @@ export default class Cl_mPedido {
     }
     cantidadTotal() {
         return this.items.reduce((sum, item) => sum + item.cantidad, 0);
+    }
+    coincideConFiltros(filtros) {
+        const estadoMatch = filtros.estado === "Todos" || this.estado === filtros.estado;
+        const pagoMatch = filtros.metodoPago === "Todos" || this.metodoPago === filtros.metodoPago;
+        const fechaMatch = !filtros.fecha || this.fecha === filtros.fecha;
+        const productoMatch = filtros.producto === "Todos" || this.items.some(item => item.nombre === filtros.producto);
+        return estadoMatch && pagoMatch && fechaMatch && productoMatch;
+    }
+    calcularUnidadesSolicitadasDeProducto(codigo, nombre) {
+        return this.items
+            .filter(item => item.codigo === codigo || item.nombre === nombre)
+            .reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
     }
     toJSON() {
         return {

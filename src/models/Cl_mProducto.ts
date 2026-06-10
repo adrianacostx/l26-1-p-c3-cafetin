@@ -1,3 +1,5 @@
+import Cl_mPedido from "./Cl_mPedido.js";
+
 export default class Cl_mProducto {
     private _id?: string;
     private _codigo: string = "";
@@ -23,6 +25,18 @@ export default class Cl_mProducto {
     get categoria(): string { return this._categoria; }
     set precio(value: number) { this._precio = value; }
     get precio(): number { return this._precio; }
+
+    static calcularEstadisticas(productos: any[], pedidos: Cl_mPedido[]): any[] {
+        const totalUnidadesSolicitadas = pedidos.reduce((total, pedido) => total + pedido.cantidadTotal(), 0);
+        return productos.map(producto => {
+            const cantidadSolicitada = pedidos.reduce((total, pedido) => 
+                total + pedido.calcularUnidadesSolicitadasDeProducto(producto.codigo, producto.nombre), 0);
+            const porcentajeSolicitado = totalUnidadesSolicitadas > 0 
+                ? (cantidadSolicitada / totalUnidadesSolicitadas) * 100 
+                : 0;
+            return { ...producto, cantidadSolicitada, porcentajeSolicitado };
+        });
+    }
 
     toJSON() {
         return {
