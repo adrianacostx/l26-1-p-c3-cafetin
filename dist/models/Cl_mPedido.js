@@ -3,14 +3,22 @@ export default class Cl_mPedido {
     _nomCliente = "";
     _items = [];
     _metodoPago = "";
+    _montoEntregado = 0;
+    _montoEfectivoBS = 0;
+    _montoEfectivoUSD = 0;
+    _cedula = "";
     _detallesPago = "";
     _fecha = "";
     _estado = "Pendiente";
-    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado }) {
+    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado, montoEntregado, montoEfectivoBS, montoEfectivoUSD, cedula }) {
         this._id = id;
         this.nomCliente = nomCliente;
         this.items = items;
         this.metodoPago = metodoPago;
+        this.montoEfectivoBS = Number(montoEfectivoBS) || 0;
+        this.montoEfectivoUSD = Number(montoEfectivoUSD) || 0;
+        this.montoEntregado = montoEntregado ?? (this._montoEfectivoBS + this._montoEfectivoUSD);
+        this.cedula = cedula || "";
         this.detallesPago = detallesPago;
         this._fecha = fecha && fecha.trim() ? fecha : new Date().toISOString().split("T")[0];
         if (estado)
@@ -23,6 +31,14 @@ export default class Cl_mPedido {
     get items() { return this._items; }
     set metodoPago(value) { this._metodoPago = value; }
     get metodoPago() { return this._metodoPago; }
+    set montoEntregado(value) { this._montoEntregado = value; }
+    get montoEntregado() { return this._montoEntregado; }
+    set montoEfectivoBS(value) { this._montoEfectivoBS = value; }
+    get montoEfectivoBS() { return this._montoEfectivoBS; }
+    set montoEfectivoUSD(value) { this._montoEfectivoUSD = value; }
+    get montoEfectivoUSD() { return this._montoEfectivoUSD; }
+    set cedula(value) { this._cedula = value.trim(); }
+    get cedula() { return this._cedula; }
     set detallesPago(value) { this._detallesPago = value; }
     get detallesPago() { return this._detallesPago; }
     set fecha(value) { this._fecha = value; }
@@ -50,9 +66,12 @@ export default class Cl_mPedido {
     toJSON() {
         return {
             NomCliente: this.nomCliente,
+            Cedula: this.cedula,
             Items: this.items,
-            Total: this.total,
+            Total: this.total(),
             MetodoPago: this.metodoPago,
+            MontoEfectivoBS: this._montoEfectivoBS,
+            MontoEfectivoUSD: this._montoEfectivoUSD,
             DetallesPago: this.detallesPago,
             Fecha: this.fecha,
             estado: this.estado

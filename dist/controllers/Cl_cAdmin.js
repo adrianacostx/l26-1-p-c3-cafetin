@@ -8,6 +8,7 @@ export default class Cl_cAdmin {
     productos = [];
     filtros = { estado: "Todos", metodoPago: "Todos", fecha: "", producto: "Todos" };
     filtroNombreProducto = "";
+    filtroCedula = "";
     constructor(vista) {
         this.vista = vista;
         this.vista.onProcesarPedido((id) => this.procesarPedido(id));
@@ -20,8 +21,13 @@ export default class Cl_cAdmin {
             this.filtroNombreProducto = texto.trim().toLowerCase();
             this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
         });
+        this.vista.onBuscarCedula((cedula) => {
+            this.filtroCedula = cedula.trim();
+            this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
+            this.vista.mostrarTotalPagadoCliente(this.totalPagadoPorCedula(cedula));
+        });
         this.vista.onGuardarProducto(async (producto) => await this.guardarProducto(producto));
-        this.vista.onEliminarProducto(async (id) => await this.eliminarProducto(id));
+        this.vista.onEliminarProducto(async (id, accion) => await this.eliminarProducto(id, accion));
         this.cargarDatos();
         setInterval(() => this.cargarPedidos(), 5000);
     }
@@ -47,12 +53,15 @@ export default class Cl_cAdmin {
                 nomCliente: p.NomCliente,
                 items: p.Items,
                 metodoPago: p.MetodoPago,
+                montoEfectivoBS: p.MontoEfectivoBS,
+                cedula: p.Cedula,
                 detallesPago: p.DetallesPago,
                 fecha: p.Fecha || (p.createdAt ? p.createdAt.split("T")[0] : ""),
                 estado: p.estado
             }));
             this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
             this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
+            this.vista.mostrarTotalEfectivoBS(this.totalIngresadoEfectivoBS());
         }
     }
     obtenerEstadisticasProductos() {
@@ -62,7 +71,20 @@ export default class Cl_cAdmin {
         return Cl_mProducto.calcularEstadisticas(productosFiltrados, this.pedidos);
     }
     obtenerPedidosFiltrados() {
-        return this.pedidos.filter(pedido => pedido.coincideConFiltros(this.filtros));
+        const cedulaNormalizada = this.filtroCedula.trim().toLowerCase();
+        return this.pedidos.filter(pedido => {
+            const cedulaMatch = !cedulaNormalizada || pedido.cedula.toLowerCase().includes(cedulaNormalizada);
+            return cedulaMatch && pedido.coincideConFiltros(this.filtros);
+        });
+    }
+    totalIngresadoEfectivoBS() {
+        return this.pedidos.reduce((sum, pedido) => sum + pedido.montoEfectivoBS, 0);
+    }
+    totalPagadoPorCedula(cedula) {
+        const cedulaNormalizada = cedula.trim().toLowerCase();
+        return this.pedidos
+            .filter(pedido => pedido.cedula.toLowerCase() === cedulaNormalizada)
+            .reduce((sum, pedido) => sum + pedido.total(), 0);
     }
     async procesarPedido(id) {
         const res = await sPedido.actualizarEstado(id, "Procesado");
@@ -88,7 +110,39 @@ export default class Cl_cAdmin {
         if (res.ok)
             await this.cargarProductos();
     }
-    async eliminarProducto(id) {
+    async eliminarProducto(id, accion) {
+        if (accion === "disable") {
+            const producto = this.productos.find(p => p.id === id);
+            if (!producto) {
+                this.vista.mostrarModal("danger", "No se encontró el producto");
+                return;
+            }
+            if (producto.disponible === false) {
+                this.vista.mostrarModal("warning", "El producto ya está marcado como no disponible");
+                return;
+            }
+            const res = await sProducto.actualizar(id, { ...producto, disponible: false });
+            this.vista.mostrarModal(res.ok ? "success" : "danger", res.mensaje);
+            if (res.ok)
+                await this.cargarProductos();
+            return;
+        }
+        if (accion === "enable") {
+            const producto = this.productos.find(p => p.id === id);
+            if (!producto) {
+                this.vista.mostrarModal("danger", "No se encontró el producto");
+                return;
+            }
+            if (producto.disponible === true) {
+                this.vista.mostrarModal("warning", "El producto ya está marcado como disponible");
+                return;
+            }
+            const res = await sProducto.actualizar(id, { ...producto, disponible: true });
+            this.vista.mostrarModal(res.ok ? "success" : "danger", res.mensaje);
+            if (res.ok)
+                await this.cargarProductos();
+            return;
+        }
         const res = await sProducto.eliminar(id);
         this.vista.mostrarModal(res.ok ? "success" : "danger", res.mensaje);
         if (res.ok)

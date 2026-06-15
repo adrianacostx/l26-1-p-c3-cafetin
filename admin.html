@@ -53,16 +53,37 @@
                     </div>
                 </div>
             </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label>Cédula del cliente</label>
+                        <input type="text" id="inCedulaBuscar" class="form-control" placeholder="Ej. V12345678">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button id="btnBuscarCedula" class="btn btn-primary">Buscar</button>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Total pagado por cliente</label>
+                        <div id="spTotalPagadoCliente" class="form-control-plaintext fs-5 fw-bold">$ 0.00</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Total ingresado en Efectivo Bs.</label>
+                        <div id="spTotalEfectivoBs" class="form-control-plaintext fs-5 fw-bold">Bs. 0.00</div>
+                    </div>
+                </div>
+            </div>
             <div class="card shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr><th>ID</th>
                                 <th>Cliente</th>
+                                <th>Cédula</th>
                                 <th>Productos</th>
                                 <th>Cantidad</th>
                                 <th>Total</th>
                                 <th>Método pago</th>
+                                <th>Monto entregado</th>
                                 <th>Detalle</th>
                                 <th>Fecha</th>
                                 <th>Estado</th>
@@ -135,6 +156,23 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="adminAlertModalBody"></div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="adminConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar disponibilidad del producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="adminConfirmModalBody"></div>
+            <div class="modal-footer justify-content-start">
+                <button type="button" class="btn btn-danger mb-3" id="adminConfirmDeleteBtn">Eliminar</button>
+                <button type="button" class="btn btn-warning mb-3" id="adminConfirmDisableBtn">No disponible</button>
+                <button type="button" class="btn btn-success mb-3" id="adminConfirmEnableBtn">Disponible</button>
+                <button type="button" class="btn btn-secondary mb-3" data-bs-dismiss="modal">Cancelar</button>
+            </div>
         </div>
     </div>
 </div>

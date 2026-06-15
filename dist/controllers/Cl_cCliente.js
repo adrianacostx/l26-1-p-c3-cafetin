@@ -5,23 +5,60 @@ export default class Cl_cCliente {
     vista;
     productos = [];
     carrito;
+    filtroNombreProducto = "";
+    clientesPorCedula = new Map();
     constructor(vista) {
         this.vista = vista;
         this.carrito = new Cl_mCarrito();
         this.vista.onAgregarProducto((codigo, cantidad) => this.agregarAlCarrito(codigo, cantidad));
         this.vista.onEliminarProducto((codigo) => this.eliminarDelCarrito(codigo));
+        this.vista.onBuscarProducto((texto) => {
+            this.filtroNombreProducto = texto.trim().toLowerCase();
+            this.mostrarProductosFiltrados();
+        });
+        this.vista.onCedulaChange((cedula) => this.buscarClientePorCedula(cedula));
         this.vista.onEnviar(() => this.enviarPedido());
+        this.cargarClientes();
         this.cargarProductos();
     }
     async cargarProductos() {
         const resultado = await sProducto.obtenerTodos();
         if (resultado.ok) {
             this.productos = resultado.data;
-            this.vista.mostrarProductos(this.productos);
+            this.mostrarProductosFiltrados();
         }
         else {
             this.vista.mostrarAlerta("danger", "Error al cargar productos");
         }
+    }
+    async cargarClientes() {
+        const resultado = await sPedido.obtenerTodos();
+        if (resultado.ok) {
+            resultado.data.forEach((pedido) => {
+                const cedula = pedido.Cedula?.trim();
+                const nombre = pedido.NomCliente?.trim();
+                if (cedula && nombre && !this.clientesPorCedula.has(cedula.toLowerCase())) {
+                    this.clientesPorCedula.set(cedula.toLowerCase(), nombre);
+                }
+            });
+        }
+    }
+    buscarClientePorCedula(cedula) {
+        const clave = cedula.trim().toLowerCase();
+        if (!clave)
+            return;
+        const nombre = this.clientesPorCedula.get(clave);
+        if (nombre) {
+            if (!this.vista.nomCliente.trim()) {
+                this.vista.setNombreCliente(nombre);
+            }
+        }
+    }
+    mostrarProductosFiltrados() {
+        const productosFiltrados = this.productos
+            .filter(prod => prod.disponible !== false)
+            .filter(prod => !this.filtroNombreProducto || prod.nombre.toLowerCase().includes(this.filtroNombreProducto));
+        this.vista.mostrarProductos(productosFiltrados);
     }
     agregarAlCarrito(codigo, cantidad) {
         const producto = this.productos.find(p => p.codigo === codigo);
@@ -42,6 +79,11 @@ export default class Cl_cCliente {
         const nomCliente = this.vista.nomCliente;
         if (!nomCliente.trim()) {
             this.vista.mostrarAlerta("danger", "Ingrese su nombre");
+            return;
+        }
+        const cedula = this.vista.cedulaCliente;
+        if (!cedula.trim()) {
+            this.vista.mostrarAlerta("danger", "Ingrese la cédula del cliente");
             return;
         }
         if (this.carrito.estaVacio()) {
@@ -70,11 +112,30 @@ export default class Cl_cCliente {
             }
             detallesPago = desc;
         }
+        else if (metodoPago === "Efectivo Bs.") {
+            const monto = this.vista.montoEfectivo;
+            if (!monto.trim() || isNaN(Number(monto)) || Number(monto) <= 0) {
+                this.vista.mostrarAlerta("danger", "Ingrese un monto válido para Efectivo");
+                return;
+            }
+            detallesPago = `Bs. ${Number(monto).toFixed(2)}`;
+        }
+        else if (metodoPago === "Efectivo USD") {
+            const monto = this.vista.montoEfectivoUSD;
+            if (!monto.trim() || isNaN(Number(monto)) || Number(monto) <= 0) {
+                this.vista.mostrarAlerta("danger", "Ingrese un monto válido para Efectivo USD");
+                return;
+            }
+            detallesPago = `$ ${Number(monto).toFixed(2)}`;
+        }
         const pedido = {
             NomCliente: nomCliente,
+            Cedula: cedula,
             Items: this.carrito.getItemsParaEnvio(),
             Total: this.carrito.calcularTotal(),
             MetodoPago: metodoPago,
+            MontoEfectivoBS: metodoPago === "Efectivo Bs." ? Number(this.vista.montoEfectivo) : 0,
+            MontoEfectivoUSD: metodoPago === "Efectivo USD" ? Number(this.vista.montoEfectivoUSD) : 0,
             DetallesPago: detallesPago,
             Fecha: new Date().toISOString().split("T")[0],
             estado: "Pendiente"

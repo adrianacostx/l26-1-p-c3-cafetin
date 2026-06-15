@@ -3,33 +3,49 @@ import I_vCliente from "../interfaces/I_vCliente.js";
 export default class Cl_vCliente implements I_vCliente {
     private inNomCliente: HTMLInputElement;
     private divProductos: HTMLElement;
+    private inputBuscarProducto: HTMLInputElement;
     private tablaCarrito: HTMLTableSectionElement;
     private spTotalPedido: HTMLSpanElement;
     private selectMetodoPago: HTMLSelectElement;
     private divPagoMovil: HTMLElement;
+    private divEfectivo: HTMLElement;
+    private divEfectivoUSD: HTMLElement;
     private divOtro: HTMLElement;
+    private inMontoEfectivo: HTMLInputElement;
+    private inMontoEfectivoUSD: HTMLInputElement;
     private inRefPago: HTMLInputElement;
     private inDescOtro: HTMLInputElement;
+    private inCedulaCliente: HTMLInputElement;
     private btEnviar: HTMLButtonElement;
     private alertContainer: HTMLElement;
     private agregarCallback?: (codigo: string, cantidad: number) => void;
     private eliminarCallback?: (codigo: string) => void;
+    private buscarProductoCallback?: (texto: string) => void;
+    private cedulaChangeCallback?: (cedula: string) => void;
     private enviarCallback?: () => void;
 
     constructor() {
         this.inNomCliente = document.getElementById("inNomCliente") as HTMLInputElement;
         this.divProductos = document.getElementById("listaProductos") as HTMLElement;
+        this.inputBuscarProducto = document.getElementById("inBuscarProductoCliente") as HTMLInputElement;
         this.tablaCarrito = document.getElementById("tablaCarrito") as HTMLTableSectionElement;
         this.spTotalPedido = document.getElementById("spTotalPedido") as HTMLSpanElement;
         this.selectMetodoPago = document.getElementById("metodoPago") as HTMLSelectElement;
+        this.divEfectivo = document.getElementById("divEfectivo") as HTMLElement;
+        this.divEfectivoUSD = document.getElementById("divEfectivoUSD") as HTMLElement;
         this.divPagoMovil = document.getElementById("divPagoMovil") as HTMLElement;
         this.divOtro = document.getElementById("divOtro") as HTMLElement;
+        this.inMontoEfectivo = document.getElementById("montoEfectivo") as HTMLInputElement;
+        this.inMontoEfectivoUSD = document.getElementById("montoEfectivoUSD") as HTMLInputElement;
         this.inRefPago = document.getElementById("refPagoMovil") as HTMLInputElement;
         this.inDescOtro = document.getElementById("descOtro") as HTMLInputElement;
+        this.inCedulaCliente = document.getElementById("inCedulaCliente") as HTMLInputElement;
         this.btEnviar = document.getElementById("btEnviar") as HTMLButtonElement;
         this.alertContainer = document.getElementById("clienteAlertContainer") as HTMLElement;
 
         this.selectMetodoPago.addEventListener("change", () => this.cambiarMetodoPago());
+        this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
+        this.inCedulaCliente.oninput = () => this.cedulaChangeCallback?.(this.inCedulaCliente.value);
         this.btEnviar.onclick = () => this.enviarCallback?.();
         this.cambiarMetodoPago();
     }
@@ -38,12 +54,17 @@ export default class Cl_vCliente implements I_vCliente {
         const value = this.selectMetodoPago.value;
         this.divPagoMovil.style.display = value === "Pago Móvil" ? "block" : "none";
         this.divOtro.style.display = value === "Otro" ? "block" : "none";
+        this.divEfectivo.style.display = value === "Efectivo Bs." ? "block" : "none";
+        this.divEfectivoUSD.style.display = value === "Efectivo USD" ? "block" : "none";
     }
 
     get nomCliente(): string { return this.inNomCliente.value; }
     get metodoPago(): string { return this.selectMetodoPago.value; }
     get referenciaPago(): string { return this.inRefPago.value; }
     get descripcionOtro(): string { return this.inDescOtro.value; }
+    get montoEfectivo(): string { return this.inMontoEfectivo.value; }
+    get montoEfectivoUSD(): string { return this.inMontoEfectivoUSD.value; }
+    get cedulaCliente(): string { return this.inCedulaCliente.value; }
 
     onAgregarProducto(callback: (codigo: string, cantidad: number) => void): void {
         this.agregarCallback = callback;
@@ -51,6 +72,14 @@ export default class Cl_vCliente implements I_vCliente {
 
     onEliminarProducto(callback: (codigo: string) => void): void {
         this.eliminarCallback = callback;
+    }
+
+    onBuscarProducto(callback: (texto: string) => void): void {
+        this.buscarProductoCallback = callback;
+    }
+
+    onCedulaChange(callback: (cedula: string) => void): void {
+        this.cedulaChangeCallback = callback;
     }
 
     onEnviar(callback: () => void): void {
@@ -112,11 +141,18 @@ export default class Cl_vCliente implements I_vCliente {
         }, 3000);
     }
 
+    setNombreCliente(nombre: string): void {
+        this.inNomCliente.value = nombre;
+    }
+
     limpiar(): void {
         this.inNomCliente.value = "";
+        this.inCedulaCliente.value = "";
         this.selectMetodoPago.value = "";
         this.inRefPago.value = "";
         this.inDescOtro.value = "";
+        this.inMontoEfectivo.value = "";
+        this.inMontoEfectivoUSD.value = "";
         this.cambiarMetodoPago();
     }
 }
