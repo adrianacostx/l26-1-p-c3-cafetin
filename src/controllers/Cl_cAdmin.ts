@@ -10,6 +10,7 @@ export default class Cl_cAdmin {
     private productos: any[] = [];
     private filtros = { estado: "Todos", metodoPago: "Todos", fecha: "", producto: "Todos" };
     private filtroNombreProducto = "";
+    private filtroPorCodigo = "";
     private filtroCedula = "";
 
     constructor(vista: I_vAdmin) {
@@ -24,13 +25,20 @@ export default class Cl_cAdmin {
             this.filtroNombreProducto = texto.trim().toLowerCase();
             this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
         });
+        this.vista.onBuscarPorCodigo((codigo) => {
+            this.filtroPorCodigo = codigo.trim().toLowerCase();
+            this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
+        });
         this.vista.onBuscarCedula((cedula) => {
             this.filtroCedula = cedula.trim();
             this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
-            this.vista.mostrarTotalPagadoCliente(this.totalPagadoPorCedula(cedula));
+            
+            const total = Cl_mPedido.totalPorCedula(this.pedidos, cedula);
+            this.vista.mostrarTotalPagadoCliente(total);
         });
         this.vista.onGuardarProducto(async (producto) => await this.guardarProducto(producto));
         this.vista.onEliminarProducto(async (id, accion) => await this.eliminarProducto(id, accion));
+
         this.cargarDatos();
         setInterval(() => this.cargarPedidos(), 5000);
     }
@@ -57,45 +65,55 @@ export default class Cl_cAdmin {
             this.pedidos = res.data.map((p: any) => new Cl_mPedido({
                 id: p.id,
                 nomCliente: p.NomCliente,
-                items: p.Items,
+                items: p.Items || [],
                 metodoPago: p.MetodoPago,
-                montoEfectivoBS: p.MontoEfectivoBS,
+                montoEfectivoBS: p.MontoEfectivoBS || 0,
+                montoEfectivoUSD: p.MontoEfectivoUSD || 0,
                 cedula: p.Cedula,
                 detallesPago: p.DetallesPago,
-                fecha: p.Fecha || (p.createdAt ? p.createdAt.split("T")[0] : ""),
-                estado: p.estado
+                fecha: p.createdAt ? p.createdAt.split("T")[0] : (p.Fecha || ""),
+                estado: p.estado || "Pendiente",
             }));
             this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
             this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
-            this.vista.mostrarTotalEfectivoBS(this.totalIngresadoEfectivoBS());
+    
+            const totalBS = Cl_mPedido.totalEfectivoBS(this.pedidos);
+            this.vista.mostrarTotalEfectivoBS(totalBS);
+
+            this.mostrarEstadisticas();
         }
     }
 
-    obtenerEstadisticasProductos() {
+    private mostrarEstadisticas() {
+    
+        const totalHoy = Cl_mPedido.totalRecaudadoEnFecha(this.pedidos);
+            this.vista.mostrarTotalRecaudadoHoy(totalHoy);
+    
+        const masVendido = Cl_mProducto.obtenerProductoMasVendido(this.productos, this.pedidos);
+        if (masVendido) {
+            this.vista.mostrarProductoMasVendido(masVendido.producto, masVendido.unidades, masVendido.ingreso);
+        } else {
+            this.vista.mostrarProductoMasVendido(null, 0, 0);
+        }
+    }
+
+    private obtenerEstadisticasProductos() {
         const productosFiltrados = this.filtroNombreProducto
             ? this.productos.filter(producto => producto.nombre.toLowerCase().includes(this.filtroNombreProducto))
             : this.productos;
-
-        return Cl_mProducto.calcularEstadisticas(productosFiltrados, this.pedidos);
+        const productosFiltradosPorCodigo = this.filtroPorCodigo
+            ? productosFiltrados.filter(producto => producto.codigo.toLowerCase().includes(this.filtroPorCodigo))
+            : productosFiltrados;
+        return Cl_mProducto.calcularEstadisticas(productosFiltradosPorCodigo, this.pedidos);
     }
 
-    obtenerPedidosFiltrados() {
+    private obtenerPedidosFiltrados(): Cl_mPedido[] {
+        let filtrados = Cl_mPedido.filtrar(this.pedidos, this.filtros);
         const cedulaNormalizada = this.filtroCedula.trim().toLowerCase();
-        return this.pedidos.filter(pedido => {
-            const cedulaMatch = !cedulaNormalizada || pedido.cedula.toLowerCase().includes(cedulaNormalizada);
-            return cedulaMatch && pedido.coincideConFiltros(this.filtros);
-        });
-    }
-
-    totalIngresadoEfectivoBS(): number {
-        return this.pedidos.reduce((sum, pedido) => sum + pedido.montoEfectivoBS, 0);
-    }
-
-    totalPagadoPorCedula(cedula: string): number {
-        const cedulaNormalizada = cedula.trim().toLowerCase();
-        return this.pedidos
-            .filter(pedido => pedido.cedula.toLowerCase() === cedulaNormalizada)
-            .reduce((sum, pedido) => sum + pedido.total(), 0);
+        if (cedulaNormalizada) {
+            filtrados = filtrados.filter(p => p.cedula.toLowerCase().includes(cedulaNormalizada));
+        }
+        return filtrados;
     }
 
     async procesarPedido(id: string) {

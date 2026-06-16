@@ -2,17 +2,19 @@ import I_vCliente from "../interfaces/I_vCliente.js";
 import sPedido from "../services/Cl_sPedido.js";
 import sProducto from "../services/Cl_sProducto.js";
 import Cl_mCarrito from "../models/Cl_mCarrito.js";
+import Cl_mPedido from "../models/Cl_mPedido.js";
 
 export default class Cl_cCliente {
     private vista: I_vCliente;
     private productos: any[] = [];
     private carrito: Cl_mCarrito;
-    private filtroNombreProducto = "";
     private clientesPorCedula: Map<string, string> = new Map();
+    private filtroNombreProducto = "";
 
     constructor(vista: I_vCliente) {
         this.vista = vista;
         this.carrito = new Cl_mCarrito();
+
         this.vista.onAgregarProducto((codigo, cantidad) => this.agregarAlCarrito(codigo, cantidad));
         this.vista.onEliminarProducto((codigo) => this.eliminarDelCarrito(codigo));
         this.vista.onBuscarProducto((texto) => {
@@ -21,6 +23,7 @@ export default class Cl_cCliente {
         });
         this.vista.onCedulaChange((cedula) => this.buscarClientePorCedula(cedula));
         this.vista.onEnviar(() => this.enviarPedido());
+
         this.cargarClientes();
         this.cargarProductos();
     }
@@ -38,13 +41,19 @@ export default class Cl_cCliente {
     async cargarClientes() {
         const resultado = await sPedido.obtenerTodos();
         if (resultado.ok) {
-            resultado.data.forEach((pedido: any) => {
-                const cedula = pedido.Cedula?.trim();
-                const nombre = pedido.NomCliente?.trim();
-                if (cedula && nombre && !this.clientesPorCedula.has(cedula.toLowerCase())) {
-                    this.clientesPorCedula.set(cedula.toLowerCase(), nombre);
-                }
-            });
+            const pedidos = resultado.data.map((p: any) => new Cl_mPedido({
+                id: p.id,
+                nomCliente: p.NomCliente,
+                items: p.Items || [],
+                metodoPago: p.MetodoPago,
+                montoEfectivoBS: p.MontoEfectivoBS || 0,
+                montoEfectivoUSD: p.MontoEfectivoUSD || 0,
+                cedula: p.Cedula,
+                detallesPago: p.DetallesPago,
+                fecha: p.Fecha || (p.createdAt ? p.createdAt.split("T")[0] : ""),
+                estado: p.estado || "Pendiente",
+            }));
+            this.clientesPorCedula = Cl_mPedido.obtenerClientesUnicos(pedidos);
         }
     }
 
@@ -52,10 +61,8 @@ export default class Cl_cCliente {
         const clave = cedula.trim().toLowerCase();
         if (!clave) return;
         const nombre = this.clientesPorCedula.get(clave);
-        if (nombre) {
-            if (!this.vista.nomCliente.trim()) {
-                this.vista.setNombreCliente(nombre);
-            }
+        if (nombre && !this.vista.nomCliente.trim()) {
+            this.vista.setNombreCliente(nombre);
         }
     }
 
@@ -84,75 +91,41 @@ export default class Cl_cCliente {
     }
 
     async enviarPedido() {
-        const nomCliente = this.vista.nomCliente;
-        if (!nomCliente.trim()) {
-            this.vista.mostrarAlerta("danger", "Ingrese su nombre");
-            return;
-        }
-        const cedula = this.vista.cedulaCliente;
-        if (!cedula.trim()) {
-            this.vista.mostrarAlerta("danger", "Ingrese la cédula del cliente");
-            return;
-        }
-        if (this.carrito.estaVacio()) {
-            this.vista.mostrarAlerta("warning", "Agregue al menos un producto");
-            return;
-        }
-        const metodoPago = this.vista.metodoPago;
-        if (!metodoPago) {
-            this.vista.mostrarAlerta("danger", "Seleccione un método de pago");
-            return;
-        }
-        let detallesPago = "";
-        if (metodoPago === "Pago Móvil") {
-            const ref = this.vista.referenciaPago;
-            if (!ref.trim()) {
-                this.vista.mostrarAlerta("danger", "Ingrese referencia/número de teléfono para Pago Móvil");
-                return;
-            }
-            detallesPago = ref;
-        } else if (metodoPago === "Otro") {
-            const desc = this.vista.descripcionOtro;
-            if (!desc.trim()) {
-                this.vista.mostrarAlerta("danger", "Ingrese una descripción para 'Otro'");
-                return;
-            }
-            detallesPago = desc;
-        } else if (metodoPago === "Efectivo Bs.") {
-            const monto = this.vista.montoEfectivo;
-            if (!monto.trim() || isNaN(Number(monto)) || Number(monto) <= 0) {
-                this.vista.mostrarAlerta("danger", "Ingrese un monto válido para Efectivo");
-                return;
-            }
-            detallesPago = `Bs. ${Number(monto).toFixed(2)}`;
-        } else if (metodoPago === "Efectivo USD") {
-            const monto = this.vista.montoEfectivoUSD;
-            if (!monto.trim() || isNaN(Number(monto)) || Number(monto) <= 0) {
-                this.vista.mostrarAlerta("danger", "Ingrese un monto válido para Efectivo USD");
-                return;
-            }
-            detallesPago = `$ ${Number(monto).toFixed(2)}`;
-        }
+        try {
+            const datos = {
+                nomCliente: this.vista.nomCliente,
+                cedula: this.vista.cedulaCliente,
+                metodoPago: this.vista.metodoPago,
+                referenciaPago: this.vista.referenciaPago,
+                descripcionOtro: this.vista.descripcionOtro,
+                montoEfectivo: this.vista.montoEfectivo,
+                montoEfectivoUSD: this.vista.montoEfectivoUSD,
+            };
 
-        const pedido = {
-            NomCliente: nomCliente,
-            Cedula: cedula,
-            Items: this.carrito.getItemsParaEnvio(),
-            Total: this.carrito.calcularTotal(),
-            MetodoPago: metodoPago,
-            MontoEfectivoBS: metodoPago === "Efectivo Bs." ? Number(this.vista.montoEfectivo) : 0,
-            MontoEfectivoUSD: metodoPago === "Efectivo USD" ? Number(this.vista.montoEfectivoUSD) : 0,
-            DetallesPago: detallesPago,
-            Fecha: new Date().toISOString().split("T")[0],
-            estado: "Pendiente"
-        };
+            const pedidoPreparado = this.carrito.validarYPrepararPedido(datos);
 
-        const resultado = await sPedido.agregar(pedido);
-        this.vista.mostrarAlerta(resultado.ok ? "success" : "danger", resultado.mensaje);
-        if (resultado.ok) {
-            this.carrito.vaciar();
-            this.vista.limpiar();
-            this.actualizarVistaCarrito();
+            const pedidoParaEnviar = {
+                NomCliente: pedidoPreparado.nomCliente,
+                Cedula: pedidoPreparado.cedula,
+                Items: pedidoPreparado.items,
+                Total: this.carrito.calcularTotal(),
+                MetodoPago: pedidoPreparado.metodoPago,
+                MontoEfectivoBS: pedidoPreparado.montoEfectivoBS,
+                MontoEfectivoUSD: pedidoPreparado.montoEfectivoUSD,
+                DetallesPago: pedidoPreparado.detallesPago,
+                estado: "Pendiente",
+            };
+
+            const resultado = await sPedido.agregar(pedidoParaEnviar);
+            this.vista.mostrarAlerta(resultado.ok ? "success" : "danger", resultado.mensaje);
+
+            if (resultado.ok) {
+                this.carrito.vaciar();
+                this.vista.limpiar();
+                this.actualizarVistaCarrito();
+            }
+        } catch (error: any) {
+            this.vista.mostrarAlerta("danger", error.message);
         }
     }
 }

@@ -13,13 +13,36 @@ export default class Cl_sProducto {
         return { ok: true, nombres: nombresUnicos };
     }
     static async agregar(producto) {
+        // validaciones
+        if (!producto.codigo || producto.codigo.trim() === "") {
+            return { ok: false, mensaje: "El código es obligatorio" };
+        }
+        if (!producto.nombre || producto.nombre.trim() === "") {
+            return { ok: false, mensaje: "El nombre es obligatorio" };
+        }
+        if (!producto.categoria || producto.categoria.trim() === "") {
+            return { ok: false, mensaje: "La categoría es obligatoria" };
+        }
+        if (producto.precio === undefined || producto.precio <= 0) {
+            return { ok: false, mensaje: "El precio debe ser mayor a cero" };
+        }
         const registro = { ...producto, tabla: this.TABLA };
         return await Cl_sProductoApi.agregar(registro);
     }
     static async actualizar(id, producto) {
+        if (!id)
+            return { ok: false, mensaje: "ID inválido" };
+        if (!producto.nombre || producto.nombre.trim() === "") {
+            return { ok: false, mensaje: "El nombre es obligatorio" };
+        }
+        if (producto.precio === undefined || producto.precio <= 0) {
+            return { ok: false, mensaje: "El precio debe ser mayor a cero" };
+        }
         return await Cl_sProductoApi.actualizarPorId(id, { ...producto, tabla: this.TABLA });
     }
     static async eliminar(id) {
+        if (!id)
+            return { ok: false, mensaje: "ID inválido" };
         const uri = `${Cl_sProductoApi['apiUrl']}/${id}`;
         const respuesta = await Cl_sProductoApi['fetchMockApi']({ method: "DELETE", uri });
         if (!respuesta.ok)

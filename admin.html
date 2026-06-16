@@ -12,6 +12,24 @@
         <h1 class="h3">Panel de Administración</h1>
         <button class="btn btn-outline-secondary" onclick="location.href='index.html'">Ir a Cliente</button>
     </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Producto más vendido</h5>
+                <div id="productoMasVendido">Cargando...</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5>Total recaudado hoy</h5>
+                <div id="totalRecaudadoHoy">Cargando...</div>
+            </div>
+        </div>
+    </div>
+</div>
 
     <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pedidos">Pedidos</button></li>
@@ -76,18 +94,19 @@
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
-                            <tr><th>ID</th>
+                            <tr>
+                                <th>ID</th>
                                 <th>Cliente</th>
                                 <th>Cédula</th>
                                 <th>Productos</th>
-                                <th>Cantidad</th>
                                 <th>Total</th>
                                 <th>Método pago</th>
-                                <th>Monto entregado</th>
-                                <th>Detalle</th>
+                                <th>Detalle/Efectivo/Ref</th>
                                 <th>Fecha</th>
                                 <th>Estado</th>
-                                <th>Acción</th></thead>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
                         <tbody id="tablaPedidos"></tbody>
                     </table>
                 </div>
@@ -100,8 +119,12 @@
                     <h5 class="card-title">Gestión de productos</h5>
                     <div class="row g-3 mb-3">
                         <div class="col-md-3">
+                            <label for="inBuscarPorCodigo" class="form-label">Buscar producto por código</label>
+                            <input type="text" id="inBuscarPorCodigo" class="form-control" placeholder="Código del producto">
+                        </div>
+                        <div class="col-md-3">
                             <label for="inBuscarProducto" class="form-label">Buscar producto por nombre</label>
-                            <input type="text" id="inBuscarProducto" class="form-control" placeholder="Escribe el nombre del producto">
+                            <input type="text" id="inBuscarProducto" class="form-control" placeholder="Nombre del producto">
                         </div>
                     </div>
                     <form id="formProducto" class="row g-3">
@@ -136,7 +159,8 @@
                                 <th>Nombre</th>
                                 <th>Categoría</th>
                                 <th>Precio</th>
-                                <th>Solicitudes</th>
+                                <th>Unidades vendidas</th>
+                                <th>Ingreso total</th>
                                 <th>% total de pedidos</th>
                                 <th>Acciones</th>
                             </tr>

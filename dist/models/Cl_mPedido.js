@@ -10,7 +10,7 @@ export default class Cl_mPedido {
     _detallesPago = "";
     _fecha = "";
     _estado = "Pendiente";
-    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado, montoEntregado, montoEfectivoBS, montoEfectivoUSD, cedula }) {
+    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado, montoEntregado, montoEfectivoBS, montoEfectivoUSD, cedula, }) {
         this._id = id;
         this.nomCliente = nomCliente;
         this.items = items;
@@ -74,8 +74,38 @@ export default class Cl_mPedido {
             MontoEfectivoUSD: this._montoEfectivoUSD,
             DetallesPago: this.detallesPago,
             Fecha: this.fecha,
-            estado: this.estado
+            estado: this.estado,
         };
+    }
+    // filtros y logica de pedidos para administración
+    static filtrar(pedidos, filtros) {
+        return pedidos.filter(p => p.coincideConFiltros(filtros));
+    }
+    static totalEfectivoBS(pedidos) {
+        return pedidos.reduce((sum, p) => sum + p.montoEfectivoBS, 0);
+    }
+    static totalUSD(pedidos) {
+        return pedidos.reduce((sum, p) => sum + p.total(), 0);
+    }
+    static totalPorCedula(pedidos, cedula) {
+        const cedulaNormalizada = cedula.trim().toLowerCase();
+        return pedidos
+            .filter(p => p.cedula.toLowerCase() === cedulaNormalizada)
+            .reduce((sum, p) => sum + p.total(), 0);
+    }
+    static obtenerClientesUnicos(pedidos) {
+        const mapa = new Map();
+        pedidos.forEach(p => {
+            const ced = p.cedula.trim().toLowerCase();
+            if (ced && p.nomCliente.trim() && !mapa.has(ced)) {
+                mapa.set(ced, p.nomCliente.trim());
+            }
+        });
+        return mapa;
+    }
+    static totalRecaudadoEnFecha(pedidos, fechaStr) {
+        const hoy = fechaStr || new Date().toISOString().split("T")[0];
+        return pedidos.filter(p => p.fecha === hoy).reduce((sum, p) => sum + p.total(), 0);
     }
 }
 //# sourceMappingURL=Cl_mPedido.js.map

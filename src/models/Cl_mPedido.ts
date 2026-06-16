@@ -11,8 +11,31 @@ export default class Cl_mPedido {
     private _fecha: string = "";
     private _estado: string = "Pendiente";
 
-    constructor({ id, nomCliente, items, metodoPago, detallesPago, fecha, estado, montoEntregado, montoEfectivoBS, montoEfectivoUSD, cedula }: 
-                { id?: string; nomCliente: string; items: any[]; metodoPago: string; detallesPago: string; estado?: string; fecha?: string; montoEntregado?: number; montoEfectivoBS?: number; montoEfectivoUSD?: number; cedula?: string }) {
+    constructor({
+        id,
+        nomCliente,
+        items,
+        metodoPago,
+        detallesPago,
+        fecha,
+        estado,
+        montoEntregado,
+        montoEfectivoBS,
+        montoEfectivoUSD,
+        cedula,
+    }: {
+        id?: string;
+        nomCliente: string;
+        items: any[];
+        metodoPago: string;
+        detallesPago: string;
+        estado?: string;
+        fecha?: string;
+        montoEntregado?: number;
+        montoEfectivoBS?: number;
+        montoEfectivoUSD?: number;
+        cedula?: string;
+    }) {
         this._id = id;
         this.nomCliente = nomCliente;
         this.items = items;
@@ -81,7 +104,42 @@ export default class Cl_mPedido {
             MontoEfectivoUSD: this._montoEfectivoUSD,
             DetallesPago: this.detallesPago,
             Fecha: this.fecha,
-            estado: this.estado
+            estado: this.estado,
         };
+    }
+
+    // filtros y logica de pedidos para administración
+    static filtrar(pedidos: Cl_mPedido[], filtros: { estado: string; metodoPago: string; fecha: string; producto: string }): Cl_mPedido[] {
+        return pedidos.filter(p => p.coincideConFiltros(filtros));
+    }
+
+    static totalEfectivoBS(pedidos: Cl_mPedido[]): number {
+        return pedidos.reduce((sum, p) => sum + p.montoEfectivoBS, 0);
+    }
+
+    static totalUSD(pedidos: Cl_mPedido[]): number {
+        return pedidos.reduce((sum, p) => sum + p.total(), 0);
+    }
+
+    static totalPorCedula(pedidos: Cl_mPedido[], cedula: string): number {
+        const cedulaNormalizada = cedula.trim().toLowerCase();
+        return pedidos
+            .filter(p => p.cedula.toLowerCase() === cedulaNormalizada)
+            .reduce((sum, p) => sum + p.total(), 0);
+    }
+
+    static obtenerClientesUnicos(pedidos: Cl_mPedido[]): Map<string, string> {
+        const mapa = new Map<string, string>();
+        pedidos.forEach(p => {
+            const ced = p.cedula.trim().toLowerCase();
+            if (ced && p.nomCliente.trim() && !mapa.has(ced)) {
+                mapa.set(ced, p.nomCliente.trim());
+            }
+        });
+        return mapa;
+    }
+    static totalRecaudadoEnFecha(pedidos: Cl_mPedido[], fechaStr?: string): number {
+        const hoy = fechaStr || new Date().toISOString().split("T")[0];
+        return pedidos.filter(p => p.fecha === hoy).reduce((sum, p) => sum + p.total(), 0);
     }
 }

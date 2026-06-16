@@ -1,6 +1,7 @@
 import I_vCliente from "../interfaces/I_vCliente.js";
 
 export default class Cl_vCliente implements I_vCliente {
+    private container: HTMLElement;
     private inNomCliente: HTMLInputElement;
     private divProductos: HTMLElement;
     private inputBuscarProducto: HTMLInputElement;
@@ -18,6 +19,7 @@ export default class Cl_vCliente implements I_vCliente {
     private inCedulaCliente: HTMLInputElement;
     private btEnviar: HTMLButtonElement;
     private alertContainer: HTMLElement;
+
     private agregarCallback?: (codigo: string, cantidad: number) => void;
     private eliminarCallback?: (codigo: string) => void;
     private buscarProductoCallback?: (texto: string) => void;
@@ -25,6 +27,7 @@ export default class Cl_vCliente implements I_vCliente {
     private enviarCallback?: () => void;
 
     constructor() {
+        this.container = document.getElementById("clientePanel") as HTMLElement;
         this.inNomCliente = document.getElementById("inNomCliente") as HTMLInputElement;
         this.divProductos = document.getElementById("listaProductos") as HTMLElement;
         this.inputBuscarProducto = document.getElementById("inBuscarProductoCliente") as HTMLInputElement;
@@ -50,7 +53,7 @@ export default class Cl_vCliente implements I_vCliente {
         this.cambiarMetodoPago();
     }
 
-    cambiarMetodoPago() {
+    private cambiarMetodoPago(): void {
         const value = this.selectMetodoPago.value;
         this.divPagoMovil.style.display = value === "Pago Móvil" ? "block" : "none";
         this.divOtro.style.display = value === "Otro" ? "block" : "none";
@@ -59,33 +62,18 @@ export default class Cl_vCliente implements I_vCliente {
     }
 
     get nomCliente(): string { return this.inNomCliente.value; }
+    get cedulaCliente(): string { return this.inCedulaCliente.value; }
     get metodoPago(): string { return this.selectMetodoPago.value; }
     get referenciaPago(): string { return this.inRefPago.value; }
     get descripcionOtro(): string { return this.inDescOtro.value; }
     get montoEfectivo(): string { return this.inMontoEfectivo.value; }
     get montoEfectivoUSD(): string { return this.inMontoEfectivoUSD.value; }
-    get cedulaCliente(): string { return this.inCedulaCliente.value; }
 
-    onAgregarProducto(callback: (codigo: string, cantidad: number) => void): void {
-        this.agregarCallback = callback;
+    setNombreCliente(nombre: string): void {
+        this.inNomCliente.value = nombre;
     }
 
-    onEliminarProducto(callback: (codigo: string) => void): void {
-        this.eliminarCallback = callback;
-    }
-
-    onBuscarProducto(callback: (texto: string) => void): void {
-        this.buscarProductoCallback = callback;
-    }
-
-    onCedulaChange(callback: (cedula: string) => void): void {
-        this.cedulaChangeCallback = callback;
-    }
-
-    onEnviar(callback: () => void): void {
-        this.enviarCallback = callback;
-    }
-
+    // Mostrar datos
     mostrarProductos(productos: any[]): void {
         this.divProductos.innerHTML = "";
         productos.forEach(prod => {
@@ -141,8 +129,20 @@ export default class Cl_vCliente implements I_vCliente {
         }, 3000);
     }
 
-    setNombreCliente(nombre: string): void {
-        this.inNomCliente.value = nombre;
+    onAgregarProducto(callback: (codigo: string, cantidad: number) => void): void {
+        this.agregarCallback = callback;
+    }
+    onEliminarProducto(callback: (codigo: string) => void): void {
+        this.eliminarCallback = callback;
+    }
+    onBuscarProducto(callback: (texto: string) => void): void {
+        this.buscarProductoCallback = callback;
+    }
+    onCedulaChange(callback: (cedula: string) => void): void {
+        this.cedulaChangeCallback = callback;
+    }
+    onEnviar(callback: () => void): void {
+        this.enviarCallback = callback;
     }
 
     limpiar(): void {
@@ -155,4 +155,7 @@ export default class Cl_vCliente implements I_vCliente {
         this.inMontoEfectivoUSD.value = "";
         this.cambiarMetodoPago();
     }
+
+    mostrar(): void { this.container.removeAttribute("hidden"); }
+    ocultar(): void { this.container.setAttribute("hidden", "true"); }
 }

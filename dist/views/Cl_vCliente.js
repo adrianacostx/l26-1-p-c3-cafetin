@@ -1,4 +1,5 @@
 export default class Cl_vCliente {
+    container;
     inNomCliente;
     divProductos;
     inputBuscarProducto;
@@ -22,6 +23,7 @@ export default class Cl_vCliente {
     cedulaChangeCallback;
     enviarCallback;
     constructor() {
+        this.container = document.getElementById("clientePanel");
         this.inNomCliente = document.getElementById("inNomCliente");
         this.divProductos = document.getElementById("listaProductos");
         this.inputBuscarProducto = document.getElementById("inBuscarProductoCliente");
@@ -53,27 +55,16 @@ export default class Cl_vCliente {
         this.divEfectivoUSD.style.display = value === "Efectivo USD" ? "block" : "none";
     }
     get nomCliente() { return this.inNomCliente.value; }
+    get cedulaCliente() { return this.inCedulaCliente.value; }
     get metodoPago() { return this.selectMetodoPago.value; }
     get referenciaPago() { return this.inRefPago.value; }
     get descripcionOtro() { return this.inDescOtro.value; }
     get montoEfectivo() { return this.inMontoEfectivo.value; }
     get montoEfectivoUSD() { return this.inMontoEfectivoUSD.value; }
-    get cedulaCliente() { return this.inCedulaCliente.value; }
-    onAgregarProducto(callback) {
-        this.agregarCallback = callback;
+    setNombreCliente(nombre) {
+        this.inNomCliente.value = nombre;
     }
-    onEliminarProducto(callback) {
-        this.eliminarCallback = callback;
-    }
-    onBuscarProducto(callback) {
-        this.buscarProductoCallback = callback;
-    }
-    onCedulaChange(callback) {
-        this.cedulaChangeCallback = callback;
-    }
-    onEnviar(callback) {
-        this.enviarCallback = callback;
-    }
+    // Mostrar datos
     mostrarProductos(productos) {
         this.divProductos.innerHTML = "";
         productos.forEach(prod => {
@@ -126,8 +117,20 @@ export default class Cl_vCliente {
                 el.remove();
         }, 3000);
     }
-    setNombreCliente(nombre) {
-        this.inNomCliente.value = nombre;
+    onAgregarProducto(callback) {
+        this.agregarCallback = callback;
+    }
+    onEliminarProducto(callback) {
+        this.eliminarCallback = callback;
+    }
+    onBuscarProducto(callback) {
+        this.buscarProductoCallback = callback;
+    }
+    onCedulaChange(callback) {
+        this.cedulaChangeCallback = callback;
+    }
+    onEnviar(callback) {
+        this.enviarCallback = callback;
     }
     limpiar() {
         this.inNomCliente.value = "";
@@ -139,5 +142,7 @@ export default class Cl_vCliente {
         this.inMontoEfectivoUSD.value = "";
         this.cambiarMetodoPago();
     }
+    mostrar() { this.container.removeAttribute("hidden"); }
+    ocultar() { this.container.setAttribute("hidden", "true"); }
 }
 //# sourceMappingURL=Cl_vCliente.js.map
