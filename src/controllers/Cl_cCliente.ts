@@ -3,6 +3,7 @@ import sPedido from "../services/Cl_sPedido.js";
 import sProducto from "../services/Cl_sProducto.js";
 import Cl_mCarrito from "../models/Cl_mCarrito.js";
 import Cl_mPedido from "../models/Cl_mPedido.js";
+import Cl_sDolar from "../services/Cl_sDolar.js";
 
 export default class Cl_cCliente {
     private vista: I_vCliente;
@@ -91,10 +92,21 @@ export default class Cl_cCliente {
         this.actualizarVistaCarrito();
     }
 
-    public actualizarVistaCarrito() {
+    public async actualizarVistaCarrito() {
+    try {
+        const totalUSD = this.carrito.calcularTotal();
+        const tasa = await Cl_sDolar.obtenerTasa();
+        const totalBs = totalUSD * tasa;
         this.vista.mostrarCarrito(this.carrito.getItems());
-        this.vista.mostrarTotal(this.carrito.calcularTotal());
+        this.vista.mostrarTotal(totalUSD, totalBs);
+    } catch (error) {
+        console.error("Error al actualizar el carrito:", error);
+        // Si falla la tasa, mostrar solo USD y Bs. 0
+        const totalUSD = this.carrito.calcularTotal();
+        this.vista.mostrarCarrito(this.carrito.getItems());
+        this.vista.mostrarTotal(totalUSD, 0);
     }
+}
 
     async enviarPedido() {
         try {
@@ -137,7 +149,6 @@ export default class Cl_cCliente {
             this.vista.mostrarAlerta(resultado.ok ? "success" : "danger", resultado.mensaje);
 
             if (resultado.ok) {
-                // Si la cédula era nueva, la agregamos al mapa para futuras validaciones
                 if (cedula) {
                     const clave = cedula.toLowerCase();
                     if (!this.clientesPorCedula.has(clave)) {

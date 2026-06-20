@@ -2,13 +2,20 @@ export default interface I_vAdmin {
     mostrarPedidos(pedidos: any[]): void;
     mostrarProductos(productos: any[]): void;
     mostrarTotalEfectivoBS(total: number): void;
-    mostrarTotalPagadoCliente(total: number): void;
-    mostrarTotalRecaudadoHoy(total: number): void;
-    mostrarProductoMasVendido(producto: any, unidades: number, ingreso: number): void;
-    mostrarProductoMayorIngreso(producto: any, ingreso: number): void;
+    mostrarTotalPagadoCliente(totalUSD: number, totalBs: number): void;
+    mostrarTotalRecaudadoHoy(totalUSD: number, totalBs: number): void;
+
+    // Solo producto y unidades (sin ingreso)
+    mostrarProductoMasVendido(producto: any, unidades: number): void;
+
+    // Ingreso en USD y Bs.
+    mostrarProductoMayorIngreso(producto: any, ingresoUSD: number, ingresoBs: number): void;
+
     poblarFiltroProductos(nombres: string[]): void;
     poblarSelectAnalisisProducto(productos: any[]): void;
-    mostrarEstadisticasProducto(unidades: number, ingreso: number): void;
+
+    mostrarEstadisticasProducto(unidades: number, ingresoUSD: number, ingresoBs: number): void;
+
     mostrarModal(tipo: "success" | "danger" | "warning", mensaje: string): void;
 
     onProcesarPedido(callback: (id: string) => void): void;

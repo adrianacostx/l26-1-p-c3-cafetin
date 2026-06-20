@@ -2,6 +2,7 @@ import sPedido from "../services/Cl_sPedido.js";
 import sProducto from "../services/Cl_sProducto.js";
 import Cl_mPedido from "../models/Cl_mPedido.js";
 import Cl_mProducto from "../models/Cl_mProducto.js";
+import Cl_sDolar from "../services/Cl_sDolar.js";
 export default class Cl_cAdmin {
     vista;
     pedidos = [];
@@ -26,15 +27,19 @@ export default class Cl_cAdmin {
             this.filtroPorCodigo = codigo.trim().toLowerCase();
             this.vista.mostrarProductos(this.obtenerEstadisticasProductos());
         });
-        this.vista.onBuscarCedula((cedula) => {
+        this.vista.onBuscarCedula(async (cedula) => {
             this.filtroCedula = cedula.trim();
             this.vista.mostrarPedidos(this.obtenerPedidosFiltrados());
-            const total = Cl_mPedido.totalPorCedula(this.pedidos, cedula);
-            this.vista.mostrarTotalPagadoCliente(total);
+            const totalUSD = Cl_mPedido.totalPorCedula(this.pedidos, cedula);
+            const tasa = await Cl_sDolar.obtenerTasa();
+            const totalBs = totalUSD * tasa;
+            this.vista.mostrarTotalPagadoCliente(totalUSD, totalBs);
         });
         this.vista.onGuardarProducto(async (producto) => await this.guardarProducto(producto));
         this.vista.onEliminarProducto(async (id, accion) => await this.eliminarProducto(id, accion));
-        this.vista.onAnalisisProducto((codigo) => this.mostrarAnalisisProducto(codigo));
+        this.vista.onAnalisisProducto(async (codigo) => {
+            await this.mostrarAnalisisProducto(codigo);
+        });
         this.cargarDatos();
         setInterval(() => this.cargarPedidos(), 5000);
     }
@@ -75,36 +80,41 @@ export default class Cl_cAdmin {
             this.mostrarEstadisticas();
         }
     }
-    mostrarEstadisticas() {
-        const totalHoy = Cl_mPedido.totalRecaudadoEnFecha(this.pedidos);
-        this.vista.mostrarTotalRecaudadoHoy(totalHoy);
+    async mostrarEstadisticas() {
+        const totalUSD = Cl_mPedido.totalRecaudadoEnFecha(this.pedidos);
+        const tasa = await Cl_sDolar.obtenerTasa();
+        const totalBs = totalUSD * tasa;
+        this.vista.mostrarTotalRecaudadoHoy(totalUSD, totalBs);
         const masVendido = Cl_mProducto.obtenerProductoMasVendido(this.productos, this.pedidos);
         if (masVendido) {
-            this.vista.mostrarProductoMasVendido(masVendido.producto, masVendido.unidades, masVendido.ingreso);
+            this.vista.mostrarProductoMasVendido(masVendido.producto, masVendido.unidades);
         }
         else {
-            this.vista.mostrarProductoMasVendido(null, 0, 0);
+            this.vista.mostrarProductoMasVendido(null, 0);
         }
         const mayorIngreso = Cl_mProducto.obtenerProductoMayorIngreso(this.productos, this.pedidos);
         if (mayorIngreso) {
-            this.vista.mostrarProductoMayorIngreso(mayorIngreso.producto, mayorIngreso.ingreso);
+            const ingresoBs = mayorIngreso.ingreso * tasa;
+            this.vista.mostrarProductoMayorIngreso(mayorIngreso.producto, mayorIngreso.ingreso, ingresoBs);
         }
         else {
-            this.vista.mostrarProductoMayorIngreso(null, 0);
+            this.vista.mostrarProductoMayorIngreso(null, 0, 0);
         }
     }
-    mostrarAnalisisProducto(codigo) {
+    async mostrarAnalisisProducto(codigo) {
         const producto = this.productos.find(p => p.codigo === codigo);
         if (!producto) {
-            this.vista.mostrarEstadisticasProducto(0, 0);
+            this.vista.mostrarEstadisticasProducto(0, 0, 0);
             return;
         }
         const stats = Cl_mProducto.obtenerEstadisticasPorCodigo(codigo, this.pedidos);
+        const tasa = await Cl_sDolar.obtenerTasa();
         if (stats) {
-            this.vista.mostrarEstadisticasProducto(stats.unidades, stats.ingreso);
+            const ingresoBs = stats.ingreso * tasa;
+            this.vista.mostrarEstadisticasProducto(stats.unidades, stats.ingreso, ingresoBs);
         }
         else {
-            this.vista.mostrarEstadisticasProducto(0, 0);
+            this.vista.mostrarEstadisticasProducto(0, 0, 0);
         }
     }
     obtenerEstadisticasProductos() {

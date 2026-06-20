@@ -25,6 +25,8 @@ export default class Cl_vAdmin implements I_vAdmin {
     private prodNombreInput: HTMLInputElement;
     private prodCategoriaInput: HTMLInputElement;
     private prodPrecioInput: HTMLInputElement;
+    private prodImagenInputModal: HTMLInputElement; // input file
+    private prodImagenPreview: HTMLImageElement;    // img para vista previa
     private btnGuardarProductoModal: HTMLButtonElement;
     private btnAgregarProducto: HTMLButtonElement;
 
@@ -36,6 +38,10 @@ export default class Cl_vAdmin implements I_vAdmin {
     private selectAnalisisProducto: HTMLSelectElement;
     private txtUnidadesProducto: HTMLElement;
     private txtIngresoProducto: HTMLElement;
+    private txtTotalRecaudadoHoyBs: HTMLElement;
+    private txtProductoMayorIngresoBs: HTMLElement;
+    private txtIngresoProductoBs: HTMLElement;
+    private spTotalPagadoClienteBs: HTMLElement;
 
     // callbacks
     private procesarCallback?: (id: string) => void;
@@ -71,6 +77,10 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.selectAnalisisProducto = document.getElementById("selectAnalisisProducto") as HTMLSelectElement;
         this.txtUnidadesProducto = document.getElementById("txtUnidadesProducto") as HTMLElement;
         this.txtIngresoProducto = document.getElementById("txtIngresoProducto") as HTMLElement;
+        this.txtTotalRecaudadoHoyBs = document.getElementById("totalRecaudadoHoyBs") as HTMLElement;
+        this.txtProductoMayorIngresoBs = document.getElementById("txtProductoMayorIngresoBs") as HTMLElement;
+        this.txtIngresoProductoBs = document.getElementById("txtIngresoProductoBs") as HTMLElement;
+        this.spTotalPagadoClienteBs = document.getElementById("spTotalPagadoClienteBs") as HTMLElement;
 
         // modal de producto
         this.productoModal = document.getElementById("productoModal") as HTMLElement;
@@ -79,6 +89,8 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.prodNombreInput = document.getElementById("prodNombreModal") as HTMLInputElement;
         this.prodCategoriaInput = document.getElementById("prodCategoriaModal") as HTMLInputElement;
         this.prodPrecioInput = document.getElementById("prodPrecioModal") as HTMLInputElement;
+        this.prodImagenInputModal = document.getElementById("prodImagenInputModal") as HTMLInputElement;
+        this.prodImagenPreview = document.getElementById("prodImagenModal") as HTMLImageElement;
         this.btnGuardarProductoModal = document.getElementById("btnGuardarProductoModal") as HTMLButtonElement;
         this.btnAgregarProducto = document.getElementById("btnAgregarProducto") as HTMLButtonElement;
 
@@ -90,7 +102,7 @@ export default class Cl_vAdmin implements I_vAdmin {
             this.productoModalInstance = new bs.Modal(this.productoModal);
         }
 
-        // eventos
+        // eventos de filtros y búsquedas
         this.filtroEstado.onchange = () => this.filtrarCallback?.({
             estado: this.filtroEstado.value,
             metodoPago: this.filtroMetodoPago.value,
@@ -125,6 +137,22 @@ export default class Cl_vAdmin implements I_vAdmin {
         // botón guardar del modal
         this.btnGuardarProductoModal.onclick = () => this.guardarProductoDesdeModal();
 
+        // ✅ Previsualización de imagen al seleccionar archivo
+        this.prodImagenInputModal.addEventListener("change", (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    this.prodImagenPreview.src = ev.target?.result as string;
+                    this.prodImagenPreview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.prodImagenPreview.src = "";
+                this.prodImagenPreview.style.display = "none";
+            }
+        });
+
         // análisis de producto
         this.selectAnalisisProducto.addEventListener("change", () => {
             const codigo = this.selectAnalisisProducto.value;
@@ -133,6 +161,7 @@ export default class Cl_vAdmin implements I_vAdmin {
             } else {
                 this.txtUnidadesProducto.textContent = "0";
                 this.txtIngresoProducto.textContent = "$0.00";
+                if (this.txtIngresoProductoBs) this.txtIngresoProductoBs.textContent = "Bs. 0.00";
             }
         });
 
@@ -163,7 +192,8 @@ export default class Cl_vAdmin implements I_vAdmin {
         });
     }
 
-    // métodos del modal de producto
+    // =================== MÉTODOS DEL MODAL DE PRODUCTO ===================
+
     private abrirModalProducto(datos?: any): void {
         if (datos) {
             this.productoModalLabel.textContent = "Editar Producto";
@@ -172,10 +202,24 @@ export default class Cl_vAdmin implements I_vAdmin {
             this.prodCategoriaInput.value = datos.categoria || "";
             this.prodPrecioInput.value = datos.precio || "";
             this.productoEditandoId = datos.id || null;
+
+            // Mostrar la imagen actual si existe (usando ruta desde resources/img)
+            if (datos.imagen) {
+                this.prodImagenPreview.src = `./resources/img/${datos.imagen}`;
+                this.prodImagenPreview.style.display = "block";
+            } else {
+                this.prodImagenPreview.src = "";
+                this.prodImagenPreview.style.display = "none";
+            }
+            // Resetear el input file para no conservar archivo anterior
+            this.prodImagenInputModal.value = "";
         } else {
             this.productoModalLabel.textContent = "Agregar Producto";
             this.limpiarFormularioProducto();
             this.productoEditandoId = null;
+            this.prodImagenPreview.src = "";
+            this.prodImagenPreview.style.display = "none";
+            this.prodImagenInputModal.value = "";
         }
         this.productoModalInstance?.show();
     }
@@ -185,6 +229,7 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.prodNombreInput.value = "";
         this.prodCategoriaInput.value = "";
         this.prodPrecioInput.value = "";
+        // La imagen se limpia en abrirModalProducto
     }
 
     private guardarProductoDesdeModal(): void {
@@ -196,15 +241,34 @@ export default class Cl_vAdmin implements I_vAdmin {
             this.mostrarModal("warning", "Complete todos los campos correctamente");
             return;
         }
+
+        // ✅ Obtener nombre del archivo de imagen seleccionado
+        let nombreImagen = "";
+        const file = this.prodImagenInputModal.files?.[0];
+        if (file) {
+            // Usar el nombre original del archivo (ej. "empanada.webp")
+            nombreImagen = file.name;
+        } else if (this.productoEditandoId) {
+            // Si estamos editando y no se seleccionó nueva imagen, debemos conservar la actual
+            // Pero no la tenemos almacenada localmente, así que la obtenemos del producto editado
+            // Esto requiere que al abrir el modal hayamos guardado la imagen actual.
+            // Para simplificar, si no se selecciona archivo, dejamos imagen vacía.
+            // Si quieres conservar, deberías almacenar el nombre en una propiedad.
+            // Por ahora, dejamos vacío (el administrador deberá volver a seleccionar la imagen si quiere mantenerla).
+        }
+
         this.guardarProductoCallback?.({
             id: this.productoEditandoId,
             codigo,
             nombre,
             categoria,
             precio,
+            imagen: nombreImagen, // 👈 solo el nombre del archivo
         });
         this.productoModalInstance?.hide();
     }
+
+    // =================== MÉTODOS DE LA INTERFAZ I_vAdmin ===================
 
     mostrarPedidos(pedidos: any[]): void {
         this.tablaPedidos.innerHTML = "";
@@ -261,11 +325,18 @@ export default class Cl_vAdmin implements I_vAdmin {
     }
 
     mostrarTotalEfectivoBS(total: number): void {
-        this.spanTotalEfectivoBs.textContent = `Bs. ${total.toFixed(2)}`;
+        if (this.spanTotalEfectivoBs) {
+            this.spanTotalEfectivoBs.textContent = `Bs. ${total.toFixed(2)}`;
+        }
     }
 
-    mostrarTotalPagadoCliente(total: number): void {
-        this.spanTotalPagadoCliente.textContent = `$ ${total.toFixed(2)}`;
+    mostrarTotalPagadoCliente(totalUSD: number, totalBs: number): void {
+        if (this.spanTotalPagadoCliente) {
+            this.spanTotalPagadoCliente.textContent = `$ ${totalUSD.toFixed(2)}`;
+        }
+        if (this.spTotalPagadoClienteBs) {
+            this.spTotalPagadoClienteBs.textContent = `Bs. ${totalBs.toFixed(2)}`;
+        }
     }
 
     poblarFiltroProductos(nombres: string[]): void {
@@ -300,20 +371,26 @@ export default class Cl_vAdmin implements I_vAdmin {
         }
     }
 
-    mostrarProductoMayorIngreso(producto: any, ingreso: number): void {
-        if (producto) {
-            this.txtProductoMayorIngreso.textContent = `${producto.nombre}`;
-            this.txtProductoMayorIngresoDetalle.textContent = `Ingreso total: $${ingreso.toFixed(2)}`;
-        } else {
-            this.txtProductoMayorIngreso.textContent = "—";
-            this.txtProductoMayorIngresoDetalle.textContent = "Sin datos";
+    mostrarProductoMayorIngreso(producto: any, ingresoUSD: number, ingresoBs: number): void {
+        if (this.txtProductoMayorIngreso) {
+            this.txtProductoMayorIngreso.textContent = producto ? producto.nombre : "—";
+        }
+        if (this.txtProductoMayorIngresoDetalle) {
+            this.txtProductoMayorIngresoDetalle.textContent = producto ? `Ingreso total: $${ingresoUSD.toFixed(2)}` : "Sin datos";
+        }
+        if (this.txtProductoMayorIngresoBs) {
+            this.txtProductoMayorIngresoBs.textContent = producto ? `Bs. ${ingresoBs.toFixed(2)}` : "Bs. 0.00";
         }
     }
 
-    mostrarTotalRecaudadoHoy(total: number): void {
+    mostrarTotalRecaudadoHoy(totalUSD: number, totalBs: number): void {
         const el = document.getElementById("totalRecaudadoHoy");
         if (el) {
-            el.textContent = `$${total.toFixed(2)}`;
+            el.textContent = `$${totalUSD.toFixed(2)}`;
+        }
+        const elBs = document.getElementById("totalRecaudadoHoyBs");
+        if (elBs) {
+            elBs.textContent = `Bs. ${totalBs.toFixed(2)}`;
         }
     }
 
@@ -327,12 +404,20 @@ export default class Cl_vAdmin implements I_vAdmin {
         });
     }
 
-    mostrarEstadisticasProducto(unidades: number, ingreso: number): void {
-        this.txtUnidadesProducto.textContent = unidades.toString();
-        this.txtIngresoProducto.textContent = `$${ingreso.toFixed(2)}`;
+    mostrarEstadisticasProducto(unidades: number, ingresoUSD: number, ingresoBs: number): void {
+        if (this.txtUnidadesProducto) {
+            this.txtUnidadesProducto.textContent = unidades.toString();
+        }
+        if (this.txtIngresoProducto) {
+            this.txtIngresoProducto.textContent = `$${ingresoUSD.toFixed(2)}`;
+        }
+        if (this.txtIngresoProductoBs) {
+            this.txtIngresoProductoBs.textContent = `Bs. ${ingresoBs.toFixed(2)}`;
+        }
     }
 
-    // Callbacks
+    // =================== CALLBACKS ===================
+
     onProcesarPedido(callback: (id: string) => void): void { this.procesarCallback = callback; }
     onCancelarPedido(callback: (id: string) => void): void { this.cancelarCallback = callback; }
     onFiltrarPedidos(callback: (filtros: any) => void): void { this.filtrarCallback = callback; }
@@ -347,8 +432,12 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.analisisProductoCallback = callback;
     }
 
+    // =================== NAVEGACIÓN ===================
+
     mostrar(): void { this.container.removeAttribute("hidden"); }
     ocultar(): void { this.container.setAttribute("hidden", "true"); }
+
+    // =================== MÉTODOS PRIVADOS ADICIONALES ===================
 
     private confirmarEliminarProducto(id: string, nombre: string): void {
         this.productoAEliminarId = id;

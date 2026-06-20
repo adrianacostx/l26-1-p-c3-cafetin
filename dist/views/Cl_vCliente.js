@@ -6,6 +6,7 @@ export default class Cl_vCliente {
     selectCategoria;
     tablaCarrito;
     spTotalPedido;
+    spTotalPedidoBs;
     selectMetodoPago;
     divPagoMovil;
     divEfectivo;
@@ -32,6 +33,7 @@ export default class Cl_vCliente {
         this.selectCategoria = document.getElementById("selectCategoria");
         this.tablaCarrito = document.getElementById("tablaCarrito");
         this.spTotalPedido = document.getElementById("spTotalPedido");
+        this.spTotalPedidoBs = document.getElementById("spTotalPedidoBs");
         this.selectMetodoPago = document.getElementById("metodoPago");
         this.divEfectivo = document.getElementById("divEfectivo");
         this.divEfectivoUSD = document.getElementById("divEfectivoUSD");
@@ -78,12 +80,13 @@ export default class Cl_vCliente {
         productos.forEach(prod => {
             const card = document.createElement("div");
             card.className = "col-md-4 mb-3";
+            const imgSrc = prod.imagen ? `./resources/img/${prod.imagen}` : 'https://via.placeholder.com/150';
             card.innerHTML = `
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">${prod.nombre}</h5>
                         <div class="mb-2 d-flex justify-content-center">
-                            <img src="${prod.imagen || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" class="img-fluid">
+                            <img src="${imgSrc}" alt="${prod.nombre}" class="img-fluid product-image" style="max-height: 150px; object-fit: contain;">
                         </div>
                         <p class="card-text"><small>Categoría: ${prod.categoria}</small><br><strong>$${prod.precio.toFixed(2)}</strong></p>
                         <div class="input-group input-group-sm mb-2">
@@ -116,8 +119,13 @@ export default class Cl_vCliente {
             btnEliminar.onclick = () => this.eliminarCallback?.(item.codigo);
         });
     }
-    mostrarTotal(total) {
-        this.spTotalPedido.textContent = `$${total.toFixed(2)}`;
+    mostrarTotal(totalUSD, totalBs) {
+        if (this.spTotalPedido) {
+            this.spTotalPedido.textContent = `$${totalUSD.toFixed(2)}`;
+        }
+        if (this.spTotalPedidoBs) {
+            this.spTotalPedidoBs.textContent = `Bs. ${totalBs.toFixed(2)}`;
+        }
     }
     mostrarAlerta(tipo, mensaje) {
         const id = `alert-${Date.now()}`;

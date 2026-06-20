@@ -11,7 +11,7 @@ export default interface I_vCliente {
 
     mostrarProductos(productos: any[]): void;
     mostrarCarrito(items: any[]): void;
-    mostrarTotal(total: number): void;
+    mostrarTotal(totalUSD: number, totalBs: number): void;
     mostrarAlerta(tipo: "success" | "danger" | "warning", mensaje: string): void;
 
     onAgregarProducto(callback: (codigo: string, cantidad: number) => void): void;

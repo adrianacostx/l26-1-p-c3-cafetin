@@ -1,4 +1,5 @@
 import I_vCliente from "../interfaces/I_vCliente.js";
+import Cl_sDolar from "../services/Cl_sDolar.js";
 
 export default class Cl_vCliente implements I_vCliente {
     private container: HTMLElement;
@@ -8,6 +9,7 @@ export default class Cl_vCliente implements I_vCliente {
     private selectCategoria: HTMLSelectElement;
     private tablaCarrito: HTMLTableSectionElement;
     private spTotalPedido: HTMLSpanElement;
+    private spTotalPedidoBs: HTMLSpanElement;
     private selectMetodoPago: HTMLSelectElement;
     private divPagoMovil: HTMLElement;
     private divEfectivo: HTMLElement;
@@ -36,6 +38,7 @@ export default class Cl_vCliente implements I_vCliente {
         this.selectCategoria = document.getElementById("selectCategoria") as HTMLSelectElement;
         this.tablaCarrito = document.getElementById("tablaCarrito") as HTMLTableSectionElement;
         this.spTotalPedido = document.getElementById("spTotalPedido") as HTMLSpanElement;
+        this.spTotalPedidoBs = document.getElementById("spTotalPedidoBs") as HTMLSpanElement;
         this.selectMetodoPago = document.getElementById("metodoPago") as HTMLSelectElement;
         this.divEfectivo = document.getElementById("divEfectivo") as HTMLElement;
         this.divEfectivoUSD = document.getElementById("divEfectivoUSD") as HTMLElement;
@@ -87,12 +90,13 @@ export default class Cl_vCliente implements I_vCliente {
         productos.forEach(prod => {
             const card = document.createElement("div");
             card.className = "col-md-4 mb-3";
+            const imgSrc = prod.imagen ? `./resources/img/${prod.imagen}` : 'https://via.placeholder.com/150';
             card.innerHTML = `
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">${prod.nombre}</h5>
                         <div class="mb-2 d-flex justify-content-center">
-                            <img src="${prod.imagen || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" class="img-fluid">
+                            <img src="${imgSrc}" alt="${prod.nombre}" class="img-fluid product-image" style="max-height: 150px; object-fit: contain;">
                         </div>
                         <p class="card-text"><small>Categoría: ${prod.categoria}</small><br><strong>$${prod.precio.toFixed(2)}</strong></p>
                         <div class="input-group input-group-sm mb-2">
@@ -127,9 +131,14 @@ export default class Cl_vCliente implements I_vCliente {
         });
     }
 
-    mostrarTotal(total: number): void {
-        this.spTotalPedido.textContent = `$${total.toFixed(2)}`;
+    mostrarTotal(totalUSD: number, totalBs: number): void {
+    if (this.spTotalPedido) {
+        this.spTotalPedido.textContent = `$${totalUSD.toFixed(2)}`;
     }
+    if (this.spTotalPedidoBs) {
+        this.spTotalPedidoBs.textContent = `Bs. ${totalBs.toFixed(2)}`;
+    }
+}
 
     mostrarAlerta(tipo: "success" | "danger" | "warning", mensaje: string): void {
         const id = `alert-${Date.now()}`;

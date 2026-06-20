@@ -1,31 +1,33 @@
 export default class Cl_sDolar {
-    private static CACHE_KEY = "dolar_rate_cache";
-    private static CACHE_EXPIRY = 60 * 1000; // 1
-    private static DEFAULT_RATE = 607.39; // respaldo final
-
-    static async obtenerTasa(): Promise<number> {
+    static CACHE_KEY = "dolar_rate_cache";
+    static CACHE_EXPIRY = 60 * 1000; // 1
+    static DEFAULT_RATE = 607.39; // respaldo final
+    static async obtenerTasa() {
         try {
             const respuesta = await fetch("https://ve.dolarapi.com/v1/dolares");
             if (!respuesta.ok) {
                 throw new Error(`API respondió con status: ${respuesta.status}`);
             }
             const data = await respuesta.json();
-            let bcv = data.find((item: any) => item.fuente === "BCV");
+            let bcv = data.find((item) => item.fuente === "BCV");
             if (!bcv) {
                 // si no hay BCV, tomar el primer elemento con promedio
-                bcv = data.find((item: any) => typeof item.promedio === "number" && item.promedio > 0);
+                bcv = data.find((item) => typeof item.promedio === "number" && item.promedio > 0);
             }
             if (bcv && typeof bcv.promedio === "number" && bcv.promedio > 0) {
                 const rate = bcv.promedio;
                 // guardar en caché para futuros usos (por si falla la API)
                 try {
                     localStorage.setItem(this.CACHE_KEY, JSON.stringify({ rate, timestamp: Date.now() }));
-                } catch (_) {}
+                }
+                catch (_) { }
                 return rate;
-            } else {
+            }
+            else {
                 throw new Error("No se encontró una tasa válida en la respuesta");
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error("Error al consultar la API de ve.dolarapi.com:", error);
             // si falla, intentar usar caché (aunque esté caducada)
             try {
@@ -38,10 +40,12 @@ export default class Cl_sDolar {
                         return rate;
                     }
                 }
-            } catch (_) {}
+            }
+            catch (_) { }
             // último recurso: tasa por defecto
             console.warn("Usando tasa por defecto");
             return this.DEFAULT_RATE;
         }
     }
 }
+//# sourceMappingURL=Cl_sDolar.js.map
