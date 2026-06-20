@@ -20,8 +20,18 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white fw-bold">Nuestros Productos</div>
                 <div class="card-body">
-                    <div class="mb-3">
-                            <input type="text" id="inBuscarProductoCliente" class="form-control" placeholder="Filtrar por nombre de producto">
+                    <div class="row g-3 mb-4 align-items-center">
+                        <div class="col-md-8">
+                                <input type="text" id="inBuscarProductoCliente" class="form-control" placeholder="Filtrar por nombre de producto">
+                        </div>
+                        <div class="col-md-4">
+                                <select id="selectCategoria" class="form-select">
+                                    <option value="Todas">Todas las categorías</option>
+                                    <option value="Comidas">Comidas</option>
+                                    <option value="Bebidas">Bebidas</option>
+                                    <option value="Snacks">Snacks</option>
+                                </select>
+                        </div>
                     </div>
                     <div class="row" id="listaProductos"></div>
                 </div>

@@ -38,6 +38,7 @@ export default class Cl_cAdmin {
         });
         this.vista.onGuardarProducto(async (producto) => await this.guardarProducto(producto));
         this.vista.onEliminarProducto(async (id, accion) => await this.eliminarProducto(id, accion));
+        this.vista.onAnalisisProducto((codigo) => this.mostrarAnalisisProducto(codigo));
 
         this.cargarDatos();
         setInterval(() => this.cargarPedidos(), 5000);
@@ -56,6 +57,7 @@ export default class Cl_cAdmin {
             if (resNombres.ok) {
                 this.vista.poblarFiltroProductos(resNombres.nombres);
             }
+            this.vista.poblarSelectAnalisisProducto(this.productos);
         }
     }
 
@@ -85,15 +87,35 @@ export default class Cl_cAdmin {
     }
 
     private mostrarEstadisticas() {
-    
         const totalHoy = Cl_mPedido.totalRecaudadoEnFecha(this.pedidos);
-            this.vista.mostrarTotalRecaudadoHoy(totalHoy);
-    
+        this.vista.mostrarTotalRecaudadoHoy(totalHoy);
+
         const masVendido = Cl_mProducto.obtenerProductoMasVendido(this.productos, this.pedidos);
         if (masVendido) {
             this.vista.mostrarProductoMasVendido(masVendido.producto, masVendido.unidades, masVendido.ingreso);
         } else {
             this.vista.mostrarProductoMasVendido(null, 0, 0);
+        }
+
+        const mayorIngreso = Cl_mProducto.obtenerProductoMayorIngreso(this.productos, this.pedidos);
+        if (mayorIngreso) {
+            this.vista.mostrarProductoMayorIngreso(mayorIngreso.producto, mayorIngreso.ingreso);
+        } else {
+            this.vista.mostrarProductoMayorIngreso(null, 0);
+        }
+    }
+
+    private mostrarAnalisisProducto(codigo: string) {
+        const producto = this.productos.find(p => p.codigo === codigo);
+        if (!producto) {
+            this.vista.mostrarEstadisticasProducto(0, 0);
+            return;
+        }
+        const stats = Cl_mProducto.obtenerEstadisticasPorCodigo(codigo, this.pedidos);
+        if (stats) {
+            this.vista.mostrarEstadisticasProducto(stats.unidades, stats.ingreso);
+        } else {
+            this.vista.mostrarEstadisticasProducto(0, 0);
         }
     }
 

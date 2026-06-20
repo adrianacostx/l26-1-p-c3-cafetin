@@ -4,13 +4,15 @@ export default class Cl_mProducto {
     _nombre = "";
     _categoria = "";
     _precio = 0;
+    _imagen = "";
     _disponible = true;
-    constructor({ id, codigo, nombre, categoria, precio, disponible = true, }) {
+    constructor({ id, codigo, nombre, categoria, precio, imagen = "", disponible = true, }) {
         this._id = id;
         this.codigo = codigo;
         this.nombre = nombre;
         this.categoria = categoria;
         this.precio = precio;
+        this.imagen = imagen;
         this.disponible = disponible;
     }
     get id() {
@@ -39,6 +41,12 @@ export default class Cl_mProducto {
     }
     get precio() {
         return this._precio;
+    }
+    set imagen(value) {
+        this._imagen = value;
+    }
+    get imagen() {
+        return this._imagen;
     }
     set disponible(value) {
         this._disponible = value;
@@ -83,6 +91,22 @@ export default class Cl_mProducto {
             ingreso: ingresoMax,
         };
     }
+    static obtenerProductoMayorIngreso(productos, pedidos) {
+        if (pedidos.length === 0 || productos.length === 0)
+            return null;
+        let maxIngreso = 0;
+        let productoMayor = null;
+        for (const producto of productos) {
+            const stats = this.obtenerEstadisticasPorCodigo(producto.codigo, pedidos);
+            if (stats && stats.ingreso > maxIngreso) {
+                maxIngreso = stats.ingreso;
+                productoMayor = producto;
+            }
+        }
+        if (!productoMayor)
+            return null;
+        return { producto: productoMayor, ingreso: maxIngreso };
+    }
     static calcularEstadisticas(productos, pedidos) {
         const totalUnidadesSolicitadas = pedidos.reduce((total, pedido) => total + pedido.cantidadTotal(), 0);
         return productos.map(producto => {
@@ -106,6 +130,7 @@ export default class Cl_mProducto {
             codigo: this.codigo,
             nombre: this.nombre,
             categoria: this.categoria,
+            imagen: this.imagen,
             precio: this.precio,
             disponible: this.disponible,
         };

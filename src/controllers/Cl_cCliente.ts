@@ -10,6 +10,7 @@ export default class Cl_cCliente {
     private carrito: Cl_mCarrito;
     private clientesPorCedula: Map<string, string> = new Map();
     private filtroNombreProducto = "";
+    private filtroCategoriaProducto = "Todas";
 
     constructor(vista: I_vCliente) {
         this.vista = vista;
@@ -19,6 +20,10 @@ export default class Cl_cCliente {
         this.vista.onEliminarProducto((codigo) => this.eliminarDelCarrito(codigo));
         this.vista.onBuscarProducto((texto) => {
             this.filtroNombreProducto = texto.trim().toLowerCase();
+            this.mostrarProductosFiltrados();
+        });
+        this.vista.onBuscarPorCategoria((categoria) => {
+            this.filtroCategoriaProducto = categoria;
             this.mostrarProductosFiltrados();
         });
         this.vista.onCedulaChange((cedula) => this.buscarClientePorCedula(cedula));
@@ -69,7 +74,8 @@ export default class Cl_cCliente {
     private mostrarProductosFiltrados() {
         const productosFiltrados = this.productos
             .filter(prod => prod.disponible !== false)
-            .filter(prod => !this.filtroNombreProducto || prod.nombre.toLowerCase().includes(this.filtroNombreProducto));
+            .filter(prod => !this.filtroNombreProducto || prod.nombre.toLowerCase().includes(this.filtroNombreProducto))
+            .filter(prod => this.filtroCategoriaProducto === "Todas" || prod.categoria === this.filtroCategoriaProducto);
         this.vista.mostrarProductos(productosFiltrados);
     }
 
@@ -92,9 +98,20 @@ export default class Cl_cCliente {
 
     async enviarPedido() {
         try {
+            const cedula = this.vista.cedulaCliente.trim();
+            const nombre = this.vista.nomCliente.trim();
+
+            if (cedula) {
+                const clave = cedula.toLowerCase();
+                const nombreRegistrado = this.clientesPorCedula.get(clave);
+                if (nombreRegistrado && nombreRegistrado.toLowerCase() !== nombre.toLowerCase()) {
+                    throw new Error(`La cédula ${cedula} se encuentra registrada con otro cliente. Ingrese una cédula diferente.`);
+                }
+            }
+
             const datos = {
-                nomCliente: this.vista.nomCliente,
-                cedula: this.vista.cedulaCliente,
+                nomCliente: nombre,
+                cedula: cedula,
                 metodoPago: this.vista.metodoPago,
                 referenciaPago: this.vista.referenciaPago,
                 descripcionOtro: this.vista.descripcionOtro,
@@ -120,6 +137,13 @@ export default class Cl_cCliente {
             this.vista.mostrarAlerta(resultado.ok ? "success" : "danger", resultado.mensaje);
 
             if (resultado.ok) {
+                // Si la cédula era nueva, la agregamos al mapa para futuras validaciones
+                if (cedula) {
+                    const clave = cedula.toLowerCase();
+                    if (!this.clientesPorCedula.has(clave)) {
+                        this.clientesPorCedula.set(clave, nombre);
+                    }
+                }
                 this.carrito.vaciar();
                 this.vista.limpiar();
                 this.actualizarVistaCarrito();

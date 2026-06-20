@@ -65,7 +65,8 @@ export default class Cl_mCarrito {
         montoEfectivoUSD: number;
     } {
         // validaciones
-        if (!datos.cedula.trim()) throw new Error("Ingrese la cédula del cliente");
+        if (!datos.cedula.trim() || isNaN(parseInt(datos.cedula))) throw new Error("Ingrese la cédula del cliente");
+        if (datos.cedula.length < 7) throw new Error("La cédula debe tener al menos 7 dígitos");
         if (!datos.nomCliente.trim()) throw new Error("Ingrese su nombre");
         if (this.estaVacio()) throw new Error("Agregue al menos un producto");
         if (!datos.metodoPago) throw new Error("Seleccione un método de pago");
@@ -78,6 +79,8 @@ export default class Cl_mCarrito {
             case "Pago Móvil":
                 if (!datos.referenciaPago?.trim()) {
                     throw new Error("Ingrese referencia/número de teléfono para Pago Móvil");
+                } else if (datos.referenciaPago.length < 4) {
+                    throw new Error("La referencia/número de teléfono debe contener al menos 4 digitos");
                 }
                 detallesPago = datos.referenciaPago.trim();
                 break;

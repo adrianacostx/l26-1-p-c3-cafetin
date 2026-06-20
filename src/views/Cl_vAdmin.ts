@@ -8,17 +8,34 @@ export default class Cl_vAdmin implements I_vAdmin {
     private filtroFecha: HTMLInputElement;
     private filtroProducto: HTMLSelectElement;
     private tablaProductos: HTMLTableSectionElement;
-    private formProducto: HTMLFormElement;
-    private btnGuardarProducto: HTMLButtonElement;
     private inputBuscarProducto: HTMLInputElement;
     private inputBuscarCedula: HTMLInputElement;
     private inputBuscarPorCodigo: HTMLInputElement;
-    private btnBuscarCedula: HTMLButtonElement;
     private spanTotalEfectivoBs: HTMLElement;
     private spanTotalPagadoCliente: HTMLElement;
     private productoEditandoId: string | null = null;
     private modalInstance: any;
     private modalConfirmInstance: any;
+    private productoModalInstance: any;
+
+    // modal de producto
+    private productoModal: HTMLElement;
+    private productoModalLabel: HTMLElement;
+    private prodCodigoInput: HTMLInputElement;
+    private prodNombreInput: HTMLInputElement;
+    private prodCategoriaInput: HTMLInputElement;
+    private prodPrecioInput: HTMLInputElement;
+    private btnGuardarProductoModal: HTMLButtonElement;
+    private btnAgregarProducto: HTMLButtonElement;
+
+    // reportes
+    private txtProductoMasVendido: HTMLElement;
+    private txtProductoMasVendidoDetalle: HTMLElement;
+    private txtProductoMayorIngreso: HTMLElement;
+    private txtProductoMayorIngresoDetalle: HTMLElement;
+    private selectAnalisisProducto: HTMLSelectElement;
+    private txtUnidadesProducto: HTMLElement;
+    private txtIngresoProducto: HTMLElement;
 
     // callbacks
     private procesarCallback?: (id: string) => void;
@@ -30,6 +47,7 @@ export default class Cl_vAdmin implements I_vAdmin {
     private guardarProductoCallback?: (producto: any) => void;
     private eliminarProductoCallback?: (id: string, accion: "delete" | "disable" | "enable") => void;
     private productoAEliminarId: string | null = null;
+    private analisisProductoCallback?: (codigo: string) => void;
 
     constructor() {
         this.container = document.getElementById("adminPanel") as HTMLElement;
@@ -39,15 +57,40 @@ export default class Cl_vAdmin implements I_vAdmin {
         this.filtroFecha = document.getElementById("inFiltroFecha") as HTMLInputElement;
         this.filtroProducto = document.getElementById("inFiltroProducto") as HTMLSelectElement;
         this.tablaProductos = document.getElementById("tablaProductos") as HTMLTableSectionElement;
-        this.formProducto = document.getElementById("formProducto") as HTMLFormElement;
-        this.btnGuardarProducto = document.getElementById("btnGuardarProducto") as HTMLButtonElement;
         this.inputBuscarProducto = document.getElementById("inBuscarProducto") as HTMLInputElement;
         this.inputBuscarCedula = document.getElementById("inCedulaBuscar") as HTMLInputElement;
         this.inputBuscarPorCodigo = document.getElementById("inBuscarPorCodigo") as HTMLInputElement;
-        this.btnBuscarCedula = document.getElementById("btnBuscarCedula") as HTMLButtonElement;
         this.spanTotalEfectivoBs = document.getElementById("spTotalEfectivoBs") as HTMLElement;
         this.spanTotalPagadoCliente = document.getElementById("spTotalPagadoCliente") as HTMLElement;
 
+        // reportes
+        this.txtProductoMasVendido = document.getElementById("txtProductoMasVendido") as HTMLElement;
+        this.txtProductoMasVendidoDetalle = document.getElementById("txtProductoMasVendidoDetalle") as HTMLElement;
+        this.txtProductoMayorIngreso = document.getElementById("txtProductoMayorIngreso") as HTMLElement;
+        this.txtProductoMayorIngresoDetalle = document.getElementById("txtProductoMayorIngresoDetalle") as HTMLElement;
+        this.selectAnalisisProducto = document.getElementById("selectAnalisisProducto") as HTMLSelectElement;
+        this.txtUnidadesProducto = document.getElementById("txtUnidadesProducto") as HTMLElement;
+        this.txtIngresoProducto = document.getElementById("txtIngresoProducto") as HTMLElement;
+
+        // modal de producto
+        this.productoModal = document.getElementById("productoModal") as HTMLElement;
+        this.productoModalLabel = document.getElementById("productoModalLabel") as HTMLElement;
+        this.prodCodigoInput = document.getElementById("prodCodigoModal") as HTMLInputElement;
+        this.prodNombreInput = document.getElementById("prodNombreModal") as HTMLInputElement;
+        this.prodCategoriaInput = document.getElementById("prodCategoriaModal") as HTMLInputElement;
+        this.prodPrecioInput = document.getElementById("prodPrecioModal") as HTMLInputElement;
+        this.btnGuardarProductoModal = document.getElementById("btnGuardarProductoModal") as HTMLButtonElement;
+        this.btnAgregarProducto = document.getElementById("btnAgregarProducto") as HTMLButtonElement;
+
+        // modales de Bootstrap
+        if ((window as any).bootstrap) {
+            const bs = (window as any).bootstrap;
+            this.modalInstance = new bs.Modal(document.getElementById("adminAlertModal") as HTMLElement);
+            this.modalConfirmInstance = new bs.Modal(document.getElementById("adminConfirmModal") as HTMLElement);
+            this.productoModalInstance = new bs.Modal(this.productoModal);
+        }
+
+        // eventos
         this.filtroEstado.onchange = () => this.filtrarCallback?.({
             estado: this.filtroEstado.value,
             metodoPago: this.filtroMetodoPago.value,
@@ -74,21 +117,26 @@ export default class Cl_vAdmin implements I_vAdmin {
         });
         this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
         this.inputBuscarPorCodigo.oninput = () => this.buscarPorCodigoCallback?.(this.inputBuscarPorCodigo.value);
-        this.btnBuscarCedula.onclick = () => this.buscarCedulaCallback?.(this.inputBuscarCedula.value);
-        this.formProducto.onsubmit = (e) => { e.preventDefault(); this.guardarProducto(); };
-        this.btnGuardarProducto.onclick = () => this.guardarProducto();
+        this.inputBuscarCedula.oninput = () => this.buscarCedulaCallback?.(this.inputBuscarCedula.value);
 
-        // modales de bootstrap
-        const modalEl = document.getElementById("adminAlertModal");
-        if (modalEl && (window as any).bootstrap) {
-            this.modalInstance = new (window as any).bootstrap.Modal(modalEl);
-        }
-        const modalConfirmEl = document.getElementById("adminConfirmModal");
-        if (modalConfirmEl && (window as any).bootstrap) {
-            this.modalConfirmInstance = new (window as any).bootstrap.Modal(modalConfirmEl);
-        }
+        // botón agregar producto
+        this.btnAgregarProducto.onclick = () => this.abrirModalProducto();
 
-        // botones de confirmación 
+        // botón guardar del modal
+        this.btnGuardarProductoModal.onclick = () => this.guardarProductoDesdeModal();
+
+        // análisis de producto
+        this.selectAnalisisProducto.addEventListener("change", () => {
+            const codigo = this.selectAnalisisProducto.value;
+            if (codigo && this.analisisProductoCallback) {
+                this.analisisProductoCallback(codigo);
+            } else {
+                this.txtUnidadesProducto.textContent = "0";
+                this.txtIngresoProducto.textContent = "$0.00";
+            }
+        });
+
+        // botones de confirmación de disponibilidad
         document.getElementById("adminConfirmDeleteBtn")?.addEventListener("click", () => {
             if (this.productoAEliminarId) {
                 this.eliminarProductoCallback?.(this.productoAEliminarId, "delete");
@@ -108,6 +156,54 @@ export default class Cl_vAdmin implements I_vAdmin {
             this.modalConfirmInstance?.hide();
         });
         document.getElementById("adminCancelBtn")?.addEventListener("click", () => this.modalConfirmInstance?.hide());
+
+        // limpiar modal al cerrar
+        this.productoModal.addEventListener("hidden.bs.modal", () => {
+            this.limpiarFormularioProducto();
+        });
+    }
+
+    // métodos del modal de producto
+    private abrirModalProducto(datos?: any): void {
+        if (datos) {
+            this.productoModalLabel.textContent = "Editar Producto";
+            this.prodCodigoInput.value = datos.codigo || "";
+            this.prodNombreInput.value = datos.nombre || "";
+            this.prodCategoriaInput.value = datos.categoria || "";
+            this.prodPrecioInput.value = datos.precio || "";
+            this.productoEditandoId = datos.id || null;
+        } else {
+            this.productoModalLabel.textContent = "Agregar Producto";
+            this.limpiarFormularioProducto();
+            this.productoEditandoId = null;
+        }
+        this.productoModalInstance?.show();
+    }
+
+    private limpiarFormularioProducto(): void {
+        this.prodCodigoInput.value = "";
+        this.prodNombreInput.value = "";
+        this.prodCategoriaInput.value = "";
+        this.prodPrecioInput.value = "";
+    }
+
+    private guardarProductoDesdeModal(): void {
+        const codigo = this.prodCodigoInput.value.trim();
+        const nombre = this.prodNombreInput.value.trim();
+        const categoria = this.prodCategoriaInput.value.trim();
+        const precio = parseFloat(this.prodPrecioInput.value);
+        if (!codigo || !nombre || !categoria || isNaN(precio)) {
+            this.mostrarModal("warning", "Complete todos los campos correctamente");
+            return;
+        }
+        this.guardarProductoCallback?.({
+            id: this.productoEditandoId,
+            codigo,
+            nombre,
+            categoria,
+            precio,
+        });
+        this.productoModalInstance?.hide();
     }
 
     mostrarPedidos(pedidos: any[]): void {
@@ -159,7 +255,7 @@ export default class Cl_vAdmin implements I_vAdmin {
             `;
             const btnEditar = fila.querySelector(".btn-editar") as HTMLButtonElement;
             const btnEliminar = fila.querySelector(".btn-eliminar") as HTMLButtonElement;
-            btnEditar.onclick = () => this.editarProducto(prod);
+            btnEditar.onclick = () => this.abrirModalProducto(prod);
             btnEliminar.onclick = () => this.confirmarEliminarProducto(prod.id, prod.nombre);
         });
     }
@@ -194,25 +290,49 @@ export default class Cl_vAdmin implements I_vAdmin {
         setTimeout(() => this.modalInstance.hide(), 1500);
     }
 
-    mostrarProductoMasVendido(producto: any, unidades: number, ingreso: number): void {
-    const el = document.getElementById("productoMasVendido");
-        if (el) {
-            el.innerHTML = `
-                <strong>${producto.nombre}</strong> 
-                Código: ${producto.codigo}
-                - Unidades: ${unidades} 
-                - Ingreso: $${ingreso.toFixed(2)}
-            `;
+    mostrarProductoMasVendido(producto: any, unidades: number): void {
+        if (producto) {
+            this.txtProductoMasVendido.textContent = `${producto.nombre}`;
+            this.txtProductoMasVendidoDetalle.textContent = `Unidades: ${unidades}`;
+        } else {
+            this.txtProductoMasVendido.textContent = "—";
+            this.txtProductoMasVendidoDetalle.textContent = "Sin datos";
+        }
+    }
+
+    mostrarProductoMayorIngreso(producto: any, ingreso: number): void {
+        if (producto) {
+            this.txtProductoMayorIngreso.textContent = `${producto.nombre}`;
+            this.txtProductoMayorIngresoDetalle.textContent = `Ingreso total: $${ingreso.toFixed(2)}`;
+        } else {
+            this.txtProductoMayorIngreso.textContent = "—";
+            this.txtProductoMayorIngresoDetalle.textContent = "Sin datos";
         }
     }
 
     mostrarTotalRecaudadoHoy(total: number): void {
         const el = document.getElementById("totalRecaudadoHoy");
         if (el) {
-        el.textContent = `$${total.toFixed(2)}`;
+            el.textContent = `$${total.toFixed(2)}`;
         }
     }
 
+    poblarSelectAnalisisProducto(productos: any[]): void {
+        this.selectAnalisisProducto.innerHTML = '<option value="">Seleccione un producto...</option>';
+        productos.forEach(prod => {
+            const option = document.createElement("option");
+            option.value = prod.codigo;
+            option.textContent = `${prod.nombre} (${prod.codigo})`;
+            this.selectAnalisisProducto.appendChild(option);
+        });
+    }
+
+    mostrarEstadisticasProducto(unidades: number, ingreso: number): void {
+        this.txtUnidadesProducto.textContent = unidades.toString();
+        this.txtIngresoProducto.textContent = `$${ingreso.toFixed(2)}`;
+    }
+
+    // Callbacks
     onProcesarPedido(callback: (id: string) => void): void { this.procesarCallback = callback; }
     onCancelarPedido(callback: (id: string) => void): void { this.cancelarCallback = callback; }
     onFiltrarPedidos(callback: (filtros: any) => void): void { this.filtrarCallback = callback; }
@@ -223,31 +343,12 @@ export default class Cl_vAdmin implements I_vAdmin {
     onEliminarProducto(callback: (id: string, accion: "delete" | "disable" | "enable") => void): void {
         this.eliminarProductoCallback = callback;
     }
+    onAnalisisProducto(callback: (codigo: string) => void): void {
+        this.analisisProductoCallback = callback;
+    }
 
     mostrar(): void { this.container.removeAttribute("hidden"); }
     ocultar(): void { this.container.setAttribute("hidden", "true"); }
-
-    private editarProducto(prod: any): void {
-        (document.getElementById("prodCodigo") as HTMLInputElement).value = prod.codigo;
-        (document.getElementById("prodNombre") as HTMLInputElement).value = prod.nombre;
-        (document.getElementById("prodCategoria") as HTMLInputElement).value = prod.categoria;
-        (document.getElementById("prodPrecio") as HTMLInputElement).value = prod.precio;
-        this.productoEditandoId = prod.id;
-    }
-
-    private guardarProducto(): void {
-        const codigo = (document.getElementById("prodCodigo") as HTMLInputElement).value.trim();
-        const nombre = (document.getElementById("prodNombre") as HTMLInputElement).value.trim();
-        const categoria = (document.getElementById("prodCategoria") as HTMLInputElement).value.trim();
-        const precio = parseFloat((document.getElementById("prodPrecio") as HTMLInputElement).value);
-        if (!codigo || !nombre || !categoria || isNaN(precio)) {
-            this.mostrarModal("warning", "Complete todos los campos correctamente");
-            return;
-        }
-        this.guardarProductoCallback?.({ id: this.productoEditandoId, codigo, nombre, categoria, precio });
-        this.formProducto.reset();
-        this.productoEditandoId = null;
-    }
 
     private confirmarEliminarProducto(id: string, nombre: string): void {
         this.productoAEliminarId = id;

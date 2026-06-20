@@ -3,6 +3,7 @@ export default class Cl_vCliente {
     inNomCliente;
     divProductos;
     inputBuscarProducto;
+    selectCategoria;
     tablaCarrito;
     spTotalPedido;
     selectMetodoPago;
@@ -20,6 +21,7 @@ export default class Cl_vCliente {
     agregarCallback;
     eliminarCallback;
     buscarProductoCallback;
+    buscarPorCategoriaCallback;
     cedulaChangeCallback;
     enviarCallback;
     constructor() {
@@ -27,6 +29,7 @@ export default class Cl_vCliente {
         this.inNomCliente = document.getElementById("inNomCliente");
         this.divProductos = document.getElementById("listaProductos");
         this.inputBuscarProducto = document.getElementById("inBuscarProductoCliente");
+        this.selectCategoria = document.getElementById("selectCategoria");
         this.tablaCarrito = document.getElementById("tablaCarrito");
         this.spTotalPedido = document.getElementById("spTotalPedido");
         this.selectMetodoPago = document.getElementById("metodoPago");
@@ -41,10 +44,16 @@ export default class Cl_vCliente {
         this.inCedulaCliente = document.getElementById("inCedulaCliente");
         this.btEnviar = document.getElementById("btEnviar");
         this.alertContainer = document.getElementById("clienteAlertContainer");
+        // Eventos
         this.selectMetodoPago.addEventListener("change", () => this.cambiarMetodoPago());
-        this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
-        this.inCedulaCliente.oninput = () => this.cedulaChangeCallback?.(this.inCedulaCliente.value);
-        this.btEnviar.onclick = () => this.enviarCallback?.();
+        this.inputBuscarProducto.addEventListener("input", () => this.buscarProductoCallback?.(this.inputBuscarProducto.value));
+        this.selectCategoria.addEventListener("change", () => {
+            if (this.buscarPorCategoriaCallback) {
+                this.buscarPorCategoriaCallback(this.selectCategoria.value);
+            }
+        });
+        this.inCedulaCliente.addEventListener("input", () => this.cedulaChangeCallback?.(this.inCedulaCliente.value));
+        this.btEnviar.addEventListener("click", () => this.enviarCallback?.());
         this.cambiarMetodoPago();
     }
     cambiarMetodoPago() {
@@ -64,7 +73,6 @@ export default class Cl_vCliente {
     setNombreCliente(nombre) {
         this.inNomCliente.value = nombre;
     }
-    // Mostrar datos
     mostrarProductos(productos) {
         this.divProductos.innerHTML = "";
         productos.forEach(prod => {
@@ -74,6 +82,9 @@ export default class Cl_vCliente {
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">${prod.nombre}</h5>
+                        <div class="mb-2 d-flex justify-content-center">
+                            <img src="${prod.imagen || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" class="img-fluid">
+                        </div>
                         <p class="card-text"><small>Categoría: ${prod.categoria}</small><br><strong>$${prod.precio.toFixed(2)}</strong></p>
                         <div class="input-group input-group-sm mb-2">
                             <input type="number" id="cant-${prod.codigo}" class="form-control" value="1" min="1">
@@ -125,6 +136,9 @@ export default class Cl_vCliente {
     }
     onBuscarProducto(callback) {
         this.buscarProductoCallback = callback;
+    }
+    onBuscarPorCategoria(callback) {
+        this.buscarPorCategoriaCallback = callback;
     }
     onCedulaChange(callback) {
         this.cedulaChangeCallback = callback;

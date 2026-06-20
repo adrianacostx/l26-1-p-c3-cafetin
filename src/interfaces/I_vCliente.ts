@@ -17,6 +17,7 @@ export default interface I_vCliente {
     onAgregarProducto(callback: (codigo: string, cantidad: number) => void): void;
     onEliminarProducto(callback: (codigo: string) => void): void;
     onBuscarProducto(callback: (texto: string) => void): void;
+    onBuscarPorCategoria(callback: (categoria: string) => void): void;
     onCedulaChange(callback: (cedula: string) => void): void;
     onEnviar(callback: () => void): void;
 

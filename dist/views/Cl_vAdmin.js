@@ -6,17 +6,32 @@ export default class Cl_vAdmin {
     filtroFecha;
     filtroProducto;
     tablaProductos;
-    formProducto;
-    btnGuardarProducto;
     inputBuscarProducto;
     inputBuscarCedula;
     inputBuscarPorCodigo;
-    btnBuscarCedula;
     spanTotalEfectivoBs;
     spanTotalPagadoCliente;
     productoEditandoId = null;
     modalInstance;
     modalConfirmInstance;
+    productoModalInstance;
+    // modal de producto
+    productoModal;
+    productoModalLabel;
+    prodCodigoInput;
+    prodNombreInput;
+    prodCategoriaInput;
+    prodPrecioInput;
+    btnGuardarProductoModal;
+    btnAgregarProducto;
+    // reportes
+    txtProductoMasVendido;
+    txtProductoMasVendidoDetalle;
+    txtProductoMayorIngreso;
+    txtProductoMayorIngresoDetalle;
+    selectAnalisisProducto;
+    txtUnidadesProducto;
+    txtIngresoProducto;
     // callbacks
     procesarCallback;
     cancelarCallback;
@@ -27,6 +42,7 @@ export default class Cl_vAdmin {
     guardarProductoCallback;
     eliminarProductoCallback;
     productoAEliminarId = null;
+    analisisProductoCallback;
     constructor() {
         this.container = document.getElementById("adminPanel");
         this.tablaPedidos = document.getElementById("tablaPedidos");
@@ -35,14 +51,36 @@ export default class Cl_vAdmin {
         this.filtroFecha = document.getElementById("inFiltroFecha");
         this.filtroProducto = document.getElementById("inFiltroProducto");
         this.tablaProductos = document.getElementById("tablaProductos");
-        this.formProducto = document.getElementById("formProducto");
-        this.btnGuardarProducto = document.getElementById("btnGuardarProducto");
         this.inputBuscarProducto = document.getElementById("inBuscarProducto");
         this.inputBuscarCedula = document.getElementById("inCedulaBuscar");
         this.inputBuscarPorCodigo = document.getElementById("inBuscarPorCodigo");
-        this.btnBuscarCedula = document.getElementById("btnBuscarCedula");
         this.spanTotalEfectivoBs = document.getElementById("spTotalEfectivoBs");
         this.spanTotalPagadoCliente = document.getElementById("spTotalPagadoCliente");
+        // reportes
+        this.txtProductoMasVendido = document.getElementById("txtProductoMasVendido");
+        this.txtProductoMasVendidoDetalle = document.getElementById("txtProductoMasVendidoDetalle");
+        this.txtProductoMayorIngreso = document.getElementById("txtProductoMayorIngreso");
+        this.txtProductoMayorIngresoDetalle = document.getElementById("txtProductoMayorIngresoDetalle");
+        this.selectAnalisisProducto = document.getElementById("selectAnalisisProducto");
+        this.txtUnidadesProducto = document.getElementById("txtUnidadesProducto");
+        this.txtIngresoProducto = document.getElementById("txtIngresoProducto");
+        // modal de producto
+        this.productoModal = document.getElementById("productoModal");
+        this.productoModalLabel = document.getElementById("productoModalLabel");
+        this.prodCodigoInput = document.getElementById("prodCodigoModal");
+        this.prodNombreInput = document.getElementById("prodNombreModal");
+        this.prodCategoriaInput = document.getElementById("prodCategoriaModal");
+        this.prodPrecioInput = document.getElementById("prodPrecioModal");
+        this.btnGuardarProductoModal = document.getElementById("btnGuardarProductoModal");
+        this.btnAgregarProducto = document.getElementById("btnAgregarProducto");
+        // modales de Bootstrap
+        if (window.bootstrap) {
+            const bs = window.bootstrap;
+            this.modalInstance = new bs.Modal(document.getElementById("adminAlertModal"));
+            this.modalConfirmInstance = new bs.Modal(document.getElementById("adminConfirmModal"));
+            this.productoModalInstance = new bs.Modal(this.productoModal);
+        }
+        // eventos
         this.filtroEstado.onchange = () => this.filtrarCallback?.({
             estado: this.filtroEstado.value,
             metodoPago: this.filtroMetodoPago.value,
@@ -69,19 +107,23 @@ export default class Cl_vAdmin {
         });
         this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
         this.inputBuscarPorCodigo.oninput = () => this.buscarPorCodigoCallback?.(this.inputBuscarPorCodigo.value);
-        this.btnBuscarCedula.onclick = () => this.buscarCedulaCallback?.(this.inputBuscarCedula.value);
-        this.formProducto.onsubmit = (e) => { e.preventDefault(); this.guardarProducto(); };
-        this.btnGuardarProducto.onclick = () => this.guardarProducto();
-        // modales de bootstrap
-        const modalEl = document.getElementById("adminAlertModal");
-        if (modalEl && window.bootstrap) {
-            this.modalInstance = new window.bootstrap.Modal(modalEl);
-        }
-        const modalConfirmEl = document.getElementById("adminConfirmModal");
-        if (modalConfirmEl && window.bootstrap) {
-            this.modalConfirmInstance = new window.bootstrap.Modal(modalConfirmEl);
-        }
-        // botones de confirmación 
+        this.inputBuscarCedula.oninput = () => this.buscarCedulaCallback?.(this.inputBuscarCedula.value);
+        // botón agregar producto
+        this.btnAgregarProducto.onclick = () => this.abrirModalProducto();
+        // botón guardar del modal
+        this.btnGuardarProductoModal.onclick = () => this.guardarProductoDesdeModal();
+        // análisis de producto
+        this.selectAnalisisProducto.addEventListener("change", () => {
+            const codigo = this.selectAnalisisProducto.value;
+            if (codigo && this.analisisProductoCallback) {
+                this.analisisProductoCallback(codigo);
+            }
+            else {
+                this.txtUnidadesProducto.textContent = "0";
+                this.txtIngresoProducto.textContent = "$0.00";
+            }
+        });
+        // botones de confirmación de disponibilidad
         document.getElementById("adminConfirmDeleteBtn")?.addEventListener("click", () => {
             if (this.productoAEliminarId) {
                 this.eliminarProductoCallback?.(this.productoAEliminarId, "delete");
@@ -101,6 +143,51 @@ export default class Cl_vAdmin {
             this.modalConfirmInstance?.hide();
         });
         document.getElementById("adminCancelBtn")?.addEventListener("click", () => this.modalConfirmInstance?.hide());
+        // limpiar modal al cerrar
+        this.productoModal.addEventListener("hidden.bs.modal", () => {
+            this.limpiarFormularioProducto();
+        });
+    }
+    // métodos del modal de producto
+    abrirModalProducto(datos) {
+        if (datos) {
+            this.productoModalLabel.textContent = "Editar Producto";
+            this.prodCodigoInput.value = datos.codigo || "";
+            this.prodNombreInput.value = datos.nombre || "";
+            this.prodCategoriaInput.value = datos.categoria || "";
+            this.prodPrecioInput.value = datos.precio || "";
+            this.productoEditandoId = datos.id || null;
+        }
+        else {
+            this.productoModalLabel.textContent = "Agregar Producto";
+            this.limpiarFormularioProducto();
+            this.productoEditandoId = null;
+        }
+        this.productoModalInstance?.show();
+    }
+    limpiarFormularioProducto() {
+        this.prodCodigoInput.value = "";
+        this.prodNombreInput.value = "";
+        this.prodCategoriaInput.value = "";
+        this.prodPrecioInput.value = "";
+    }
+    guardarProductoDesdeModal() {
+        const codigo = this.prodCodigoInput.value.trim();
+        const nombre = this.prodNombreInput.value.trim();
+        const categoria = this.prodCategoriaInput.value.trim();
+        const precio = parseFloat(this.prodPrecioInput.value);
+        if (!codigo || !nombre || !categoria || isNaN(precio)) {
+            this.mostrarModal("warning", "Complete todos los campos correctamente");
+            return;
+        }
+        this.guardarProductoCallback?.({
+            id: this.productoEditandoId,
+            codigo,
+            nombre,
+            categoria,
+            precio,
+        });
+        this.productoModalInstance?.hide();
     }
     mostrarPedidos(pedidos) {
         this.tablaPedidos.innerHTML = "";
@@ -150,7 +237,7 @@ export default class Cl_vAdmin {
             `;
             const btnEditar = fila.querySelector(".btn-editar");
             const btnEliminar = fila.querySelector(".btn-eliminar");
-            btnEditar.onclick = () => this.editarProducto(prod);
+            btnEditar.onclick = () => this.abrirModalProducto(prod);
             btnEliminar.onclick = () => this.confirmarEliminarProducto(prod.id, prod.nombre);
         });
     }
@@ -181,15 +268,24 @@ export default class Cl_vAdmin {
         this.modalInstance.show();
         setTimeout(() => this.modalInstance.hide(), 1500);
     }
-    mostrarProductoMasVendido(producto, unidades, ingreso) {
-        const el = document.getElementById("productoMasVendido");
-        if (el) {
-            el.innerHTML = `
-                <strong>${producto.nombre}</strong> 
-                Código: ${producto.codigo}
-                - Unidades: ${unidades} 
-                - Ingreso: $${ingreso.toFixed(2)}
-            `;
+    mostrarProductoMasVendido(producto, unidades) {
+        if (producto) {
+            this.txtProductoMasVendido.textContent = `${producto.nombre}`;
+            this.txtProductoMasVendidoDetalle.textContent = `Unidades: ${unidades}`;
+        }
+        else {
+            this.txtProductoMasVendido.textContent = "—";
+            this.txtProductoMasVendidoDetalle.textContent = "Sin datos";
+        }
+    }
+    mostrarProductoMayorIngreso(producto, ingreso) {
+        if (producto) {
+            this.txtProductoMayorIngreso.textContent = `${producto.nombre}`;
+            this.txtProductoMayorIngresoDetalle.textContent = `Ingreso total: $${ingreso.toFixed(2)}`;
+        }
+        else {
+            this.txtProductoMayorIngreso.textContent = "—";
+            this.txtProductoMayorIngresoDetalle.textContent = "Sin datos";
         }
     }
     mostrarTotalRecaudadoHoy(total) {
@@ -198,6 +294,20 @@ export default class Cl_vAdmin {
             el.textContent = `$${total.toFixed(2)}`;
         }
     }
+    poblarSelectAnalisisProducto(productos) {
+        this.selectAnalisisProducto.innerHTML = '<option value="">Seleccione un producto...</option>';
+        productos.forEach(prod => {
+            const option = document.createElement("option");
+            option.value = prod.codigo;
+            option.textContent = `${prod.nombre} (${prod.codigo})`;
+            this.selectAnalisisProducto.appendChild(option);
+        });
+    }
+    mostrarEstadisticasProducto(unidades, ingreso) {
+        this.txtUnidadesProducto.textContent = unidades.toString();
+        this.txtIngresoProducto.textContent = `$${ingreso.toFixed(2)}`;
+    }
+    // Callbacks
     onProcesarPedido(callback) { this.procesarCallback = callback; }
     onCancelarPedido(callback) { this.cancelarCallback = callback; }
     onFiltrarPedidos(callback) { this.filtrarCallback = callback; }
@@ -208,28 +318,11 @@ export default class Cl_vAdmin {
     onEliminarProducto(callback) {
         this.eliminarProductoCallback = callback;
     }
+    onAnalisisProducto(callback) {
+        this.analisisProductoCallback = callback;
+    }
     mostrar() { this.container.removeAttribute("hidden"); }
     ocultar() { this.container.setAttribute("hidden", "true"); }
-    editarProducto(prod) {
-        document.getElementById("prodCodigo").value = prod.codigo;
-        document.getElementById("prodNombre").value = prod.nombre;
-        document.getElementById("prodCategoria").value = prod.categoria;
-        document.getElementById("prodPrecio").value = prod.precio;
-        this.productoEditandoId = prod.id;
-    }
-    guardarProducto() {
-        const codigo = document.getElementById("prodCodigo").value.trim();
-        const nombre = document.getElementById("prodNombre").value.trim();
-        const categoria = document.getElementById("prodCategoria").value.trim();
-        const precio = parseFloat(document.getElementById("prodPrecio").value);
-        if (!codigo || !nombre || !categoria || isNaN(precio)) {
-            this.mostrarModal("warning", "Complete todos los campos correctamente");
-            return;
-        }
-        this.guardarProductoCallback?.({ id: this.productoEditandoId, codigo, nombre, categoria, precio });
-        this.formProducto.reset();
-        this.productoEditandoId = null;
-    }
     confirmarEliminarProducto(id, nombre) {
         this.productoAEliminarId = id;
         const modalBody = document.getElementById("adminConfirmModalBody");

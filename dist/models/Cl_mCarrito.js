@@ -36,8 +36,10 @@ export default class Cl_mCarrito {
     }
     validarYPrepararPedido(datos) {
         // validaciones
-        if (!datos.cedula.trim())
+        if (!datos.cedula.trim() || isNaN(parseInt(datos.cedula)))
             throw new Error("Ingrese la cédula del cliente");
+        if (datos.cedula.length < 7)
+            throw new Error("La cédula debe tener al menos 7 dígitos");
         if (!datos.nomCliente.trim())
             throw new Error("Ingrese su nombre");
         if (this.estaVacio())
@@ -51,6 +53,9 @@ export default class Cl_mCarrito {
             case "Pago Móvil":
                 if (!datos.referenciaPago?.trim()) {
                     throw new Error("Ingrese referencia/número de teléfono para Pago Móvil");
+                }
+                else if (datos.referenciaPago.length < 4) {
+                    throw new Error("La referencia/número de teléfono debe contener al menos 4 digitos");
                 }
                 detallesPago = datos.referenciaPago.trim();
                 break;

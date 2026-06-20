@@ -6,6 +6,7 @@ export default class Cl_mProducto {
     private _nombre: string = "";
     private _categoria: string = "";
     private _precio: number = 0;
+    private _imagen: string = "";
     private _disponible: boolean = true;
 
     constructor({
@@ -14,6 +15,7 @@ export default class Cl_mProducto {
         nombre,
         categoria,
         precio,
+        imagen = "",
         disponible = true,
     }: {
         id?: string;
@@ -21,6 +23,7 @@ export default class Cl_mProducto {
         nombre: string;
         categoria: string;
         precio: number;
+        imagen?: string;
         disponible?: boolean;
     }) {
         this._id = id;
@@ -28,6 +31,7 @@ export default class Cl_mProducto {
         this.nombre = nombre;
         this.categoria = categoria;
         this.precio = precio;
+        this.imagen = imagen;
         this.disponible = disponible;
     }
 
@@ -61,6 +65,13 @@ export default class Cl_mProducto {
     }
     get precio(): number {
         return this._precio;
+    }
+
+    set imagen(value: string) {
+        this._imagen = value;
+    }
+    get imagen(): string {
+        return this._imagen;
     }
 
     set disponible(value: boolean) {
@@ -112,6 +123,21 @@ export default class Cl_mProducto {
         };
     }
 
+    static obtenerProductoMayorIngreso(productos: any[], pedidos: Cl_mPedido[]): { producto: any; ingreso: number } | null {
+        if (pedidos.length === 0 || productos.length === 0) return null;
+        let maxIngreso = 0;
+        let productoMayor = null;
+        for (const producto of productos) {
+            const stats = this.obtenerEstadisticasPorCodigo(producto.codigo, pedidos);
+            if (stats && stats.ingreso > maxIngreso) {
+                maxIngreso = stats.ingreso;
+                productoMayor = producto;
+            }
+        }
+        if (!productoMayor) return null;
+        return { producto: productoMayor, ingreso: maxIngreso };
+    }
+
     static calcularEstadisticas(productos: any[], pedidos: Cl_mPedido[]): any[] {
         const totalUnidadesSolicitadas = pedidos.reduce((total, pedido) => total + pedido.cantidadTotal(), 0);
 
@@ -138,6 +164,7 @@ export default class Cl_mProducto {
             codigo: this.codigo,
             nombre: this.nombre,
             categoria: this.categoria,
+            imagen: this.imagen,
             precio: this.precio,
             disponible: this.disponible,
         };

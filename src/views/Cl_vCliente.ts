@@ -5,6 +5,7 @@ export default class Cl_vCliente implements I_vCliente {
     private inNomCliente: HTMLInputElement;
     private divProductos: HTMLElement;
     private inputBuscarProducto: HTMLInputElement;
+    private selectCategoria: HTMLSelectElement;
     private tablaCarrito: HTMLTableSectionElement;
     private spTotalPedido: HTMLSpanElement;
     private selectMetodoPago: HTMLSelectElement;
@@ -23,6 +24,7 @@ export default class Cl_vCliente implements I_vCliente {
     private agregarCallback?: (codigo: string, cantidad: number) => void;
     private eliminarCallback?: (codigo: string) => void;
     private buscarProductoCallback?: (texto: string) => void;
+    private buscarPorCategoriaCallback?: (categoria: string) => void;
     private cedulaChangeCallback?: (cedula: string) => void;
     private enviarCallback?: () => void;
 
@@ -31,6 +33,7 @@ export default class Cl_vCliente implements I_vCliente {
         this.inNomCliente = document.getElementById("inNomCliente") as HTMLInputElement;
         this.divProductos = document.getElementById("listaProductos") as HTMLElement;
         this.inputBuscarProducto = document.getElementById("inBuscarProductoCliente") as HTMLInputElement;
+        this.selectCategoria = document.getElementById("selectCategoria") as HTMLSelectElement;
         this.tablaCarrito = document.getElementById("tablaCarrito") as HTMLTableSectionElement;
         this.spTotalPedido = document.getElementById("spTotalPedido") as HTMLSpanElement;
         this.selectMetodoPago = document.getElementById("metodoPago") as HTMLSelectElement;
@@ -46,10 +49,16 @@ export default class Cl_vCliente implements I_vCliente {
         this.btEnviar = document.getElementById("btEnviar") as HTMLButtonElement;
         this.alertContainer = document.getElementById("clienteAlertContainer") as HTMLElement;
 
+        // Eventos
         this.selectMetodoPago.addEventListener("change", () => this.cambiarMetodoPago());
-        this.inputBuscarProducto.oninput = () => this.buscarProductoCallback?.(this.inputBuscarProducto.value);
-        this.inCedulaCliente.oninput = () => this.cedulaChangeCallback?.(this.inCedulaCliente.value);
-        this.btEnviar.onclick = () => this.enviarCallback?.();
+        this.inputBuscarProducto.addEventListener("input", () => this.buscarProductoCallback?.(this.inputBuscarProducto.value));
+        this.selectCategoria.addEventListener("change", () => {
+            if (this.buscarPorCategoriaCallback) {
+                this.buscarPorCategoriaCallback(this.selectCategoria.value);
+            }
+        });
+        this.inCedulaCliente.addEventListener("input", () => this.cedulaChangeCallback?.(this.inCedulaCliente.value));
+        this.btEnviar.addEventListener("click", () => this.enviarCallback?.());
         this.cambiarMetodoPago();
     }
 
@@ -73,7 +82,6 @@ export default class Cl_vCliente implements I_vCliente {
         this.inNomCliente.value = nombre;
     }
 
-    // Mostrar datos
     mostrarProductos(productos: any[]): void {
         this.divProductos.innerHTML = "";
         productos.forEach(prod => {
@@ -83,6 +91,9 @@ export default class Cl_vCliente implements I_vCliente {
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">${prod.nombre}</h5>
+                        <div class="mb-2 d-flex justify-content-center">
+                            <img src="${prod.imagen || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" class="img-fluid">
+                        </div>
                         <p class="card-text"><small>Categoría: ${prod.categoria}</small><br><strong>$${prod.precio.toFixed(2)}</strong></p>
                         <div class="input-group input-group-sm mb-2">
                             <input type="number" id="cant-${prod.codigo}" class="form-control" value="1" min="1">
@@ -137,6 +148,9 @@ export default class Cl_vCliente implements I_vCliente {
     }
     onBuscarProducto(callback: (texto: string) => void): void {
         this.buscarProductoCallback = callback;
+    }
+    onBuscarPorCategoria(callback: (categoria: string) => void): void {
+        this.buscarPorCategoriaCallback = callback;
     }
     onCedulaChange(callback: (cedula: string) => void): void {
         this.cedulaChangeCallback = callback;
