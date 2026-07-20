@@ -4,7 +4,7 @@ Este proyecto implementa un sistema web de pedidos para un cafetín. Incluye una
 
 ---
 
-## Qué hace?
+## ¿Qué hace?
 
 - Permite al cliente ver productos con imagen, categoría y precio.
 - Filtra productos por nombre y categoría.
